@@ -7,6 +7,7 @@ Created on Mon Jan  4 14:03:27 2021
 import json
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.patches as patches
 import time
 import paho.mqtt.client as mqtt
 
@@ -29,26 +30,83 @@ def on_message(client, userdata, msg):
     
     # for ball in m_in['preballlog']:
     #     ax.scatter(ball[0], ball[1],c='g', marker='o') 
-    preballlogs=np.array(m_in['preballlog'])
-    ball =np.array( m_in['ball'])
     pball =np.array( m_in['preball'])
+    preballlogs=np.array(m_in['preballlog'])
+    pca_ball =np.array( m_in['precutaddball'])
+    pca_balllogs=np.array(m_in['precutaddballlog'])
+    pci_ball =np.array( m_in['precutinvball'])
+    pci_balllogs=np.array(m_in['precutinvballlog'])
+    
+    
+    ball =np.array( m_in['ball'])
+    
+    pbricks =np.array( m_in['prebrickslog'])
     #print(msg.topic+" "+str( preballlogs[:,0]))
     # lines = ax.plot(0, 0)[0] 
     # lines2 = ax2.plot(0, 0)[0] 
     if m_in['side'] == '1P':
+        
+        #預測球路徑  不切球
         lines.set_color("red")
         lines.set_xdata(preballlogs[:,0])
         lines.set_ydata(preballlogs[:,1])
+        
+        #預測球路徑  切快球
+        print(str(pca_balllogs))
+        ca_lines.set_color("green")
+        ca_lines.set_xdata(pca_balllogs[:,0])
+        ca_lines.set_ydata(pca_balllogs[:,1])
+        
+        #預測球路徑  切反球
+        ci_lines.set_color("white")
+        ci_lines.set_xdata(pci_balllogs[:,0])
+        ci_lines.set_ydata(pci_balllogs[:,1])
+        
+        #預測球的落點  不切球
         psct.set_xdata(pball[0])
         psct.set_ydata(pball[1])
+        
+        #預測球的落點  切快球
+        ca_psct.set_xdata(pca_ball[0])
+        ca_psct.set_ydata(pca_ball[1])
+        
+        #預測球的落點  切反球
+        ci_psct.set_xdata(pci_ball[0])
+        ci_psct.set_ydata(pci_ball[1])
+        
     elif m_in['side'] == '2P':
+        
+        #預測球路徑  不切球
         lines2.set_color("blue")
         lines2.set_xdata(preballlogs[:,0])
         lines2.set_ydata(preballlogs[:,1])
+        
+        #預測球路徑  切快球
+        ca_lines2.set_color("green")
+        ca_lines2.set_xdata(pca_balllogs[:,0])
+        ca_lines2.set_ydata(pca_balllogs[:,1])
+        
+        #預測球路徑  切反球
+        ci_lines2.set_color("white")
+        ci_lines2.set_xdata(pci_balllogs[:,0])
+        ci_lines2.set_ydata(pci_balllogs[:,1])
+        
+        #預測球的落點  不切球
         psct2.set_xdata(pball[0])
         psct2.set_ydata(pball[1])
+        
+        #預測球的落點  切快球
+        ca_psct2.set_xdata(pca_ball[0])
+        ca_psct2.set_ydata(pca_ball[1])
+        
+        #預測球的落點  切反球
+        ci_psct2.set_xdata(pci_ball[0])
+        ci_psct2.set_ydata(pci_ball[1])
+    
+    #print(str(pbricks))
     
     
+    #球現在的位置
     sct.set_xdata(ball[0])
     sct.set_ydata(ball[1])
     
@@ -56,8 +114,14 @@ def on_message(client, userdata, msg):
     sct2.set_ydata(ball[1])
     
     
-    
-    
+    for i in range(len(rects)):
+        if i< len(pbricks):
+            rects[i].set_xy(pbricks[i])
+            rect2s[i].set_xy(pbricks[i])
+        else:
+            rects[i].set_xy((-100,-100))
+            rect2s[i].set_xy((-100,-100))
+            
     
     fig.canvas.draw()
     fig.canvas.flush_events()
@@ -75,12 +139,49 @@ ax.invert_yaxis()
 ax2.invert_yaxis()
 
 lines = ax.plot(x, y)[0] 
-lines2 = ax2.plot(x, y)[0] 
+lines2 = ax2.plot(x, y)[0]
+
+ca_lines = ax.plot(x, y,linewidth=1.5,linestyle="-.")[0] 
+ca_lines2 = ax2.plot(x, y,linewidth=1.5,linestyle="-.")[0]
+
+ci_lines = ax.plot(x, y,linewidth=0.5,linestyle="--")[0] 
+ci_lines2 = ax2.plot(x, y,linewidth=0.5,linestyle="--")[0]
+
+rects =[]
+rect2s =[]
+for i in range(10):
+    color = (0.8+i*0.02,0.8-i*0.08,0.)
+    rects.append(ax.add_patch(
+     patches.Rectangle(
+        (1, 1),
+        35,
+        25,
+        edgecolor = color,
+        facecolor = 'w',
+        fill=False      
+     ) ))
+    rect2s.append(ax2.add_patch(
+     patches.Rectangle(
+        (1, 1),
+        35,
+        25,
+        edgecolor = color,
+        facecolor = 'w',
+        fill=False      
+     ) ))
+
+ 
 sct = ax.plot(0, 0,'o',markersize=6,color=(0.,0.8,0.),markerfacecolor='none')[0] 
 sct2 = ax2.plot(0, 0,'o',markersize=6,color=(0.,0.8,0.),markerfacecolor='none')[0] 
 
-psct = ax.plot(0, 0,'o',markersize=6,color=(1.,1.,1.),markerfacecolor='none')[0] 
-psct2 = ax2.plot(0, 0,'o',markersize=6,color=(1.,1.,1.),markerfacecolor='none')[0] 
+psct = ax.plot(0, 0,'o',markersize=6,color="red",markerfacecolor='none')[0] 
+psct2 = ax2.plot(0, 0,'o',markersize=6,color="blue",markerfacecolor='none')[0] 
+
+ca_psct = ax.plot(0, 0,'o',markersize=8,color=(0.,1.,0.),markerfacecolor='none')[0] 
+ca_psct2 = ax2.plot(0, 0,'o',markersize=8,color=(0.,1.,0.),markerfacecolor='none')[0] 
+
+ci_psct = ax.plot(0, 0,'o',markersize=6,color=(1.,1.,1.),markerfacecolor='none')[0] 
+ci_psct2 = ax2.plot(0, 0,'o',markersize=6,color=(1.,1.,1.),markerfacecolor='none')[0] 
 
 #plt.xlabel('X Label')
 #plt.ylabel('Y Label')

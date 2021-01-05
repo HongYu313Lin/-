@@ -119,7 +119,7 @@ class MLPlay:
             self.reset()
             return "RESET"
         
-        nball = self.GetCenter(scene_info["ball"],(5,5))     #得到球的中心座標
+        #nball = self.GetCenter(scene_info["ball"],(5,5))     #得到球的中心座標
         ball = self.GetCenter(scene_info["ball"],(5,5))     #得到球的中心座標
         
         if self.side =='1P':
@@ -129,14 +129,23 @@ class MLPlay:
         
         forms= []
         forms.append( self.GetBound(pos=(2.5,2.5),size=(195,395+20),top_shift=(0,50+30)))
+        ca_forms= []
+        ca_forms.append( self.GetBound(pos=(2.5,2.5),size=(195,395+20),top_shift=(0,50+30)))
+        ci_forms= []
+        ci_forms.append( self.GetBound(pos=(2.5,2.5),size=(195,395+20),top_shift=(0,50+30)))
         if len(self.ballvel)>=1: 
             speed = scene_info["ball_speed"]
+            ca_speed = scene_info["ball_speed"]
+            ci_speed = scene_info["ball_speed"]
         else:
             if self.side =='1P':
                 speed =(-7,-7) #初始假設的球速
+                ca_speed =(-7,-7) #初始假設的球速
+                ci_speed =(-7,-7) #初始假設的球速
             if self.side =='2P':
                 speed =(7,7) #初始假設的球速
-        
+                ca_speed =(7,7) #初始假設的球速
+                ci_speed =(7,7) #初始假設的球速
         
         
         
@@ -150,160 +159,42 @@ class MLPlay:
             bricksvel.append((self.blocker[-1][0][0]-self.blocker[-2][0][0],0))
             self.blockervel.append(bricksvel[0])
         
-        #------------------------------主要---------------------------------
+        #------------------------------主要  初始化---------------------------------
         
         #搜尋球的落點直到Timeout或找到落點
-        balls=[]
+        #不切球
+        balls=[]                
         balls.append(ball)
-        runframe =1
-        while True:
-            points = []
-            if len(forms)>0:
-                for form in forms:
-                    points.append( self.GetCross(form,ball,speed,'form',0))#掃描邊框的碰撞點
-            i=0
-            if len(bricks)>0:
-                for brick in bricks:
-                    if brick[0]!=None:
-                        points.append( self.GetCross(brick,ball,speed,'bricks',i))#掃描軟磚的碰撞點
-                    i+=1
-           
-                
-            if len(points) > 0:
-                 #找出最近的碰撞點 
-                lens = []
-                for point in points:    
-                    if point[1] != 99999999:
-                        lens.append(point[1])
-                
-                if len(lens) >0:
-                    srcspeed = speed
-                    Min = min(lens)
-                    index = lens.index(Min)
-                    #判斷反射面反射速度
-                    if points[index][4] == 'invx':
-                        speed = (-speed[0],speed[1])
-                    elif points[index][4] == 'invy':
-                        speed = (speed[0],-speed[1])
-                    elif points[index][4] == 'invxy':
-                        speed = (-speed[0],-speed[1])
-                    
-                    #更新球的位置到碰撞點
-                    frametime = 0
-                    
-                    if points[index][0][0] != None:
-                        
-                        frametime =(abs(points[index][0][0] - ball[0])/abs(speed[0]))
-                        
-                        balls.append(points[index][0])
-                        ball = points[index][0]
-                        
-                    
-                        #-------更新障礙物的位置依據球到碰撞點的時間-----------begin
-                        if len(bricks) > 0:
-                            if len(bricksvel) > 0:
-                                if bricksvel[0][0]>0:
-                                    newx = bricks[0][0][0]+5*frametime #障礙物往右走
-                                else:
-                                    newx = bricks[0][0][0]-5*frametime #障礙物往左走
-                            else:
-                                newx = bricks[0][0][0]+(5*frametime) #預設往右走
-                            
-                            newbrick = (newx,bricks[0][0][1])
-                        
-                        
-                            crossbound = self.GetBound(pos=newbrick,size=(newx+30,20))
-                            cross = self.GetCross(crossbound,balls[-2],srcspeed,'bricks',0)
-                            #判斷是否交越障礙物
-                            if cross[1] != 99999999:
-                                #交越點
-                                crosspoint = cross[0]   
-                                balls[-1] = crosspoint
-                                ball = crosspoint
-                                
-                                #交越點時間
-                                if len(bricksvel) > 0:
-                                    crosspoint,crossframetime,crossinv = self.GetCrossTime(balls[-2],srcspeed,bricks[0],bricksvel[0])
-                                else:
-                                    crosspoint,crossframetime,crossinv = self.GetCrossTime(balls[-2],srcspeed,bricks[0],(5,0))
-                                #crossframetime =int(abs(balls[-2][0] - crosspoint[0])/abs(srcspeed[0]))
-                                
-                                if crossframetime ==None:#沒發生碰撞
-                                    balls[-1] = points[index][0]
-                                    ball = points[index][0]
-                                    #障礙物移動到的位置
-                                    if len(bricksvel) > 0:
-                                        newx = bricks[0][0][0]+bricksvel[0][0]*(frametime) 
-                                    else:
-                                        newx = bricks[0][0][0]+5*frametime #預設往右走
-                                else:
-                                    #判斷反射面反射速度
-                                    if cross[4] == 'invx':
-                                        speed = (-srcspeed[0],srcspeed[1])
-                                    elif cross[4] == 'invy':
-                                        speed = (srcspeed[0],-srcspeed[1])
-                                    elif cross[4] == 'invxy':
-                                        speed = (-srcspeed[0],-srcspeed[1])
-                                        
-                                    
-                                    balls[-1] = crosspoint
-                                    ball = crosspoint
-                                    #障礙物移動到的位置
-                                    if len(bricksvel) > 0:
-                                        newx = bricks[0][0][0]+bricksvel[0][0]*(crossframetime) 
-                                    else:
-                                        newx = bricks[0][0][0]+5*crossframetime #預設往右走
-                                
-                                
-                                
-                            #限制障礙物在框內並更新障礙物速度
-                            if newx >= (400-30):
-                                newx = 2 * (400-30) - newx
-                                if len(bricksvel) > 0:
-                                    bricksvel[0] = (-5,0)
-                            elif newx < 0:
-                                newx = 0 - newx
-                                if len(bricksvel) > 0:
-                                    bricksvel[0] = (5,0)
-                            #更新障礙物
-                            newbrick = (newx,bricks[0][0][1])
-                            bricks[-1] = self.GetBound(pos=newbrick,size=(30,20))
-                        
-                        #-------更新障礙物的位置依據球到碰撞點的時間-----------ending
-                else:
-                    if len(balls)>1:
-                        ball = balls[-1]
-                    else:
-                        if self.side =='1P':
-                            ball =(100,420) #沒找到碰撞點就假裝球在中線
-                        if self.side =='2P':
-                            ball =(100,80) #沒找到碰撞點就假裝球在中線
-                    break
-            else:
-                if len(balls)>1:
-                        ball = balls[-1]
-                else:
-                    if self.side =='1P':
-                        ball =(100,420) #沒找到碰撞點就假裝球在中線
-                    if self.side =='2P':
-                        ball =(100,80) #沒找到碰撞點就假裝球在中線
-                break
-                    
-                
-            #球回到板子高度就跳離
-            if self.side =='1P':
-                if ball[1] >=(420-5):
-                    break
-            if self.side =='2P':
-                if ball[1] <=(50+30+5):
-                    break
-            #記錄迴圈次數
-            runframe+=1
-            if runframe >=20: # timeout
-                break
-        #------------------------------主要---------------------------------
-
-        Error = ball[0] - real[0]         #追隨誤差  值越大要右移，越小要左移 
+        #切快球
+        cutaddball = ball
+        cutaddballs=[]
+        cutaddballs.append(ball)
+        #切反彈球
+        cutinvball = ball
+        cutinvballs=[]
+        cutinvballs.append(ball)
+        prebricks=[]
+        if len(bricks)>0:
+            prebricks.append(bricks[-1][0])
+        
+        ca_prebricks=[]
+        if len(bricks)>0:
+            ca_prebricks.append(bricks[-1][0])
+        
+        ci_prebricks=[]
+        if len(bricks)>0:
+            ci_prebricks.append(bricks[-1][0])
+        
+        #------------------------------主要  演算---------------------------------
+        # 不切球   N : None
+        # 切快球   S : Supper
+        # 切反彈球 I : Invert
+        ball,balls,prebricks,runframe = self.Ball_path_computer(ball, speed, forms, bricks, bricksvel, balls, prebricks,action = 'N')
+        cutaddball,cutaddballs,ca_prebricks,runframe = self.Ball_path_computer(cutaddball, ca_speed,ca_forms , bricks, bricksvel, cutaddballs, ca_prebricks,action = 'S')                                                     
+        cutinvball,cutinvballs,ci_prebricks,runframe = self.Ball_path_computer(cutinvball, ci_speed, ci_forms, bricks, bricksvel, cutinvballs, ci_prebricks,action = 'I')
+        #------------------------------主要  End---------------------------------
+        mix = (ball[0] + cutaddball[0] + cutinvball[0])/3
+        Error = mix - real[0]         #追隨誤差  值越大要右移，越小要左移 
         
         margin = 2.6
         gip=0.5
@@ -342,9 +233,10 @@ class MLPlay:
                     
         if "blocker" in scene_info.keys():
             tmp = [scene_info["frame"],scene_info["status"],self.side,command,scene_info["platform_1P"][0]+20,scene_info["platform_1P"][1],scene_info["platform_2P"][0]+20,scene_info["platform_2P"][1]+30,scene_info["ball"][0]+2.5,scene_info["ball"][1]+2.5,scene_info["ball_speed"][0],scene_info["ball_speed"][1],scene_info["blocker"][0],scene_info["blocker"][1],ball[0],ball[1]]
-            for ball in balls:
-                tmp.append(ball[0])
-                tmp.append(ball[1])
+            if balls!=None:
+                for ball in balls:
+                    tmp.append(ball[0])
+                    tmp.append(ball[1])
                 
             #payload = {'frame' : scene_info["frame"] , 'status' : scene_info["status"]}
             payload ={}
@@ -359,6 +251,12 @@ class MLPlay:
             payload['blocker'] = scene_info["blocker"]
             payload['preball'] = ball
             payload['preballlog'] = balls
+            payload['precutaddball'] = cutaddball
+            payload['precutaddballlog'] = cutaddballs
+            payload['precutinvball'] = cutinvball
+            payload['precutinvballlog'] = cutinvballs
+            payload['prebrickslog'] = prebricks
+            
             #要發布的主題和內容
             if self.side =='1P':
                 self.client.publish("Try1P/MQTT", json.dumps(payload))
@@ -367,9 +265,11 @@ class MLPlay:
             self.data.append(tmp)
         else:
             tmp = [scene_info["frame"],scene_info["status"],self.side,command,scene_info["platform_1P"][0]+20,scene_info["platform_1P"][1],scene_info["platform_2P"][0]+20,scene_info["platform_2P"][1]+30,scene_info["ball"][0]+2.5,scene_info["ball"][1]+2.5,scene_info["ball_speed"][0],scene_info["ball_speed"][1],'None','None',ball[0],ball[1]]
-            for ball in balls:
-                tmp.append(ball[0])
-                tmp.append(ball[1])
+            if balls!=None:
+                for ball in balls:
+                    tmp.append(ball[0])
+                    tmp.append(ball[1])
+            
             #payload = {'frame' : scene_info["frame"] , 'status' : scene_info["status"]}
             payload ={}
             payload['frame'] = scene_info["frame"]
@@ -383,6 +283,11 @@ class MLPlay:
             payload['blocker'] = [None,None]
             payload['preball'] = ball
             payload['preballlog'] = balls
+            payload['precutaddball'] = cutaddball
+            payload['precutaddballlog'] = cutaddballs
+            payload['precutinvball'] = cutinvball
+            payload['precutinvballlog'] = cutinvballs
+            payload['prebrickslog'] = prebricks
             #要發布的主題和內容
             if self.side =='1P':
                 self.client.publish("Try1P/MQTT", json.dumps(payload))
@@ -438,7 +343,21 @@ class MLPlay:
             
         
         return command
-
+    
+    def GetAllCross(self,ball,speed,forms,bricks):
+        points = []
+        if len(forms)>0:
+            for form in forms:
+                points.append( self.GetCross(form,ball,speed,'form',0))#掃描邊框的碰撞點
+        i=0
+        if bricks != None:
+            if len(bricks)>0:
+                for brick in bricks:
+                    if brick[0]!=None:
+                        points.append( self.GetCross(brick,ball,speed,'bricks',i))#掃描軟磚的碰撞點
+                    i+=1
+        return points
+        
     def reset(self):
         """
         Reset the status
@@ -450,6 +369,185 @@ class MLPlay:
         self.blockervel =[]
         self.data =[]
         
+    def Ball_path_computer(self,ball,velocity,forms,bricks,bricksvel, balls, prebricks,action):
+        # N : None, S : Super, I : Invert
+        # act =['N','S','I']
+        runframe =1
+        speed = velocity
+        while True:
+            points = []
+            points = self.GetAllCross(ball,speed,forms,bricks)
+            
+            ball,balls,speed,frametime,srcspeed,index = self.updata_ball(points,speed,ball,balls,action)
+                                        
+            if ball == None:    #例外
+                ball = self.updata_fail(self.side, balls)
+                break           
+            
+            #bricks,prebricks,ball,balls,speed = self.updata_cross_bricks(bricks, bricksvel, frametime,ball, balls, srcspeed, speed, points, index, prebricks)
+                                                                        
+               
+            #球回到板子高度就跳離
+            if self.side =='1P':
+                if ball[1] >=(420-5):
+                    break
+            if self.side =='2P':
+                if ball[1] <=(50+30+5):
+                    break
+            #記錄迴圈次數
+            runframe+=1
+            if runframe >=20: # timeout
+                break
+        return ball,balls,prebricks,runframe
+    
+    def updata_cross_bricks(self,bricks,bricksvel,frametime,ball,balls,srcspeed,speed,points,index,prebricks):
+        #-------更新障礙物的位置依據球到碰撞點的時間-----------begin
+        if len(bricks) > 0:
+            if len(bricksvel) > 0:
+                if bricksvel[0][0]>0:
+                    newx = bricks[0][0][0]+5*frametime #障礙物往右走
+                else:
+                    newx = bricks[0][0][0]-5*frametime #障礙物往左走
+            else:
+                newx = bricks[0][0][0]+(5*frametime) #預設往右走
+            srcbrick = (bricks[0][0][0]+2.5,bricks[0][0][1]+2.5)
+            newbrick = (newx+2.5,bricks[0][0][1]+2.5)
+        
+        
+            crossbound = self.GetBound(pos=srcbrick,size=(newx+30+2.5,20))
+            cross = self.GetCross(crossbound,balls[-2],srcspeed,'bricks',0)
+            #判斷是否交越障礙物
+            if cross[1] != 99999999:
+                #交越點
+                crosspoint = cross[0]   
+                balls[-1] = crosspoint
+                ball = crosspoint
+                
+                #交越點時間
+                if len(bricksvel) > 0:
+                    crosspoint,crossframetime,crossinv = self.GetCrossTime(balls[-2],srcspeed,bricks[0],bricksvel[0])
+                else:
+                    crosspoint,crossframetime,crossinv = self.GetCrossTime(balls[-2],srcspeed,bricks[0],(5,0))
+                #crossframetime =int(abs(balls[-2][0] - crosspoint[0])/abs(srcspeed[0]))
+                
+                if crossframetime ==None:#沒發生碰撞
+                    balls[-1] = points[index][0]
+                    ball = points[index][0]
+                    #障礙物移動到的位置
+                    if len(bricksvel) > 0:
+                        newx = bricks[0][0][0]+2.5+bricksvel[0][0]*(frametime) 
+                    else:
+                        newx = bricks[0][0][0]+2.5+5*frametime #預設往右走
+                else:
+                    #判斷反射面反射速度
+                    if crossinv == 'invx':
+                        speed = (-srcspeed[0],srcspeed[1])
+                    elif crossinv == 'invy':
+                        speed = (srcspeed[0],-srcspeed[1])
+                    elif crossinv == 'invxy':
+                        speed = (-srcspeed[0],-srcspeed[1])
+                        
+                    
+                    balls[-1] = crosspoint
+                    ball = crosspoint
+                    #障礙物移動到的位置
+                    if len(bricksvel) > 0:
+                        newx = bricks[0][0][0]+2.5+bricksvel[0][0]*(crossframetime) 
+                    else:
+                        newx = bricks[0][0][0]+2.5+5*crossframetime #預設往右走
+                
+                
+                
+            #限制障礙物在框內並更新障礙物速度
+            if newx >= (200-30):
+                newx = 2 * (200-30) - newx
+                if len(bricksvel) > 0:
+                    bricksvel[0] = (-5,0)
+            elif newx < 0:
+                newx = 0 - newx
+                if len(bricksvel) > 0:
+                    bricksvel[0] = (5,0)
+            #更新障礙物
+            newbrick = (newx,bricks[0][0][1]+2.5)
+            bricks[-1] = self.GetBound(pos=newbrick,size=(30,20))
+            prebricks.append(bricks[-1][0])
+            
+            return bricks,prebricks,ball,balls,speed
+        return [],[],ball,balls,speed
+            #-------更新障礙物的位置依據球到碰撞點的時間-----------ending
+        
+    def updata_fail(self,side,balls):
+        if balls !=None:
+            if len(balls)>1:
+                ball =balls[-1]
+        else:
+            if self.side =='1P':
+                ball =(100,417.5) #沒找到碰撞點就假裝球在中線
+            if self.side =='2P':
+                ball =(100,82.5) #沒找到碰撞點就假裝球在中線
+        return ball
+    
+    def updata_ball(self,points,speed,ball,balls, action):
+        # N : None, S : Super, I : Invert
+        act =['N','S','I']
+        if len(points) > 0:
+             #找出最近的碰撞點 
+            lens = []
+            for point in points:    
+                if point[1] != 99999999:
+                    lens.append(point[1])
+            
+            if len(lens) >0:
+                srcspeed = speed
+                Min = min(lens)
+                index = lens.index(Min)
+                #判斷反射面反射速度
+                normalspeed = abs(speed[1])
+                highspeed = normalspeed+3
+                if speed[0]<0:
+                    normalspeed =-normalspeed
+                    highspeed = -highspeed
+                if points[index][4] == 'invx':
+                    speed = (-speed[0],speed[1])
+                elif points[index][4] == 'invy':
+                    if self.side =='1P':
+                        if points[index][0][1] <=82.5:
+                            if action == act[0]:
+                                speed = (normalspeed,-speed[1])
+                            elif action == act[1]:
+                                speed = (highspeed,-speed[1])
+                            elif action == act[2]:
+                                speed = (-normalspeed,-speed[1])
+                        else:
+                            speed = (normalspeed,-speed[1])
+                    elif self.side =='2P':
+                        if points[index][0][1] >=417.5:
+                            if action == act[0]:
+                                speed = (normalspeed,-speed[1])
+                            elif action == act[1]:
+                                speed = (highspeed,-speed[1])
+                            elif action == act[2]:
+                                speed = (-normalspeed,-speed[1])
+                        else:
+                            speed = (normalspeed,-speed[1])
+                elif points[index][4] == 'invxy':
+                    speed = (-speed[0],-speed[1])
+                
+                #更新球的位置到碰撞點
+                frametime = 0
+                
+                if points[index][0] != None:
+                    
+                    frametime =(abs(points[index][0][0] - ball[0])/abs(speed[0]))
+                    
+                    #balls.append(points[index][0])
+                    ball = points[index][0]
+                    balls.append(ball)
+                    
+                    return ball,balls,speed,frametime,srcspeed,index
+                
+        return ball,balls,speed,None,None,None
+            
     def GetCrossTime(self,Ball,Ballvel,bound,boundvel):
         TopLeft = bound[0]
         BottomRight = bound[3]
@@ -465,6 +563,8 @@ class MLPlay:
         
         oy0 = TopLeft[1]
         odx = boundvel[0]
+        if odx ==0:
+            odx =0.01
         
         tpmin = (xl - bx0)/(bdx-odx)
         tpmax = (xr - bx0)/(bdx-odx)
