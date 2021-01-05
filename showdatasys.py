@@ -46,13 +46,13 @@ def on_message(client, userdata, msg):
     # lines2 = ax2.plot(0, 0)[0] 
     if m_in['side'] == '1P':
         
+        print('1P',str(m_in['first']))
         #預測球路徑  不切球
         lines.set_color("red")
         lines.set_xdata(preballlogs[:,0])
         lines.set_ydata(preballlogs[:,1])
         
-        #預測球路徑  切快球
-        print(str(pca_balllogs))
+        #預測球路徑  切快球 
         ca_lines.set_color("green")
         ca_lines.set_xdata(pca_balllogs[:,0])
         ca_lines.set_ydata(pca_balllogs[:,1])
@@ -76,6 +76,7 @@ def on_message(client, userdata, msg):
         
     elif m_in['side'] == '2P':
         
+        print('2P',str(m_in['first']))
         #預測球路徑  不切球
         lines2.set_color("blue")
         lines2.set_xdata(preballlogs[:,0])

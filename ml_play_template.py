@@ -1,6 +1,8 @@
 """
 The template of the script for the machine learning process in game pingpong
 """
+import sys
+import math
 import csv
 import numpy as np
 import matplotlib.pyplot as plt
@@ -10,6 +12,8 @@ import random
 import json  
 import datetime 
 import time
+import threading
+import queue
 
 class Point:
     def __init__(self):
@@ -101,6 +105,9 @@ class MLPlay:
         self.millis = int(round(time.time() * 1000))
         self.tick = 0
         self.Timeout = 100
+        self.first =220
+        self.isfirstsearch=True
+        self.q = queue.Queue() 
 
     def update(self, scene_info):
         """
@@ -166,7 +173,7 @@ class MLPlay:
             self.blockervel.append(bricksvel[0])
         
         #------------------------------主要  初始化---------------------------------
-        
+        runframe =round(670/7) 
         #搜尋球的落點直到Timeout或找到落點
         #不切球
         balls=[]                
@@ -192,12 +199,105 @@ class MLPlay:
             ci_prebricks.append(bricks[-1][0])
         
         #------------------------------主要  演算---------------------------------
-        # 不切球   N : None
-        # 切快球   S : Supper
-        # 切反彈球 I : Invert
-        ball,balls,prebricks,runframe = self.Ball_path_computer(ball, speed, forms, bricks, bricksvel, balls, prebricks,action = 'N')
-        cutaddball,cutaddballs,ca_prebricks,runframe = self.Ball_path_computer(cutaddball, ca_speed,ca_forms , bricks, bricksvel, cutaddballs, ca_prebricks,action = 'S')                                                     
-        cutinvball,cutinvballs,ci_prebricks,runframe = self.Ball_path_computer(cutinvball, ci_speed, ci_forms, bricks, bricksvel, cutinvballs, ci_prebricks,action = 'I')
+        #開局演算
+        if (not self.ball_served) and len(bricks)==0 : #是開局方 且是 還沒開球時 且是 EASY 才演
+            if self.side =='1P' and ball[1]>200 and self.isfirstsearch==True:
+                
+                t = threading.Thread(target = self.firstsearch1p,args =(forms, bricks, bricksvel, prebricks))
+                t.start()
+                self.isfirstsearch=False
+                # testball =[20,417.5]
+                # testballs =[]
+                # testballslog =[]
+                
+                # countlog =[]
+                # cblog =[]
+                # mcblog =[]
+                
+                # basespeed =[]
+                # testspeeds =[]
+             
+                # for i in range(0,165,5):
+                #     testballs.append([20+i,417.5])
+                #     testballslog.append([])
+                #     cblog.append([])
+                #     countlog.append([])
+                #     mcblog.append([])
+                #     mcblog[math.floor(i/5)].append(testballs[-1])
+                    
+                #     basespeed.append(7)
+                #     testspeeds.append((-7,-7))
+                # tag =-1
+                # while(self.first==220):
+                #     for i in range(len(testballs)):
+                #         testballslog[i]=[]
+                #         testballslog[i].append(testballs[i])
+                #         testballs[i],testballslog[i],prebricks,runframe,testspeeds[i] = self.Ball_path_computer(testballs[i], testspeeds[i], forms, bricks, bricksvel, testballslog[i], prebricks,action = 'N')
+                #         mcblog[i].append(testballs[i])
+                #         countlog[i].append(670/basespeed[i])
+                #         total =0
+                #         sp = 0
+                #         for count in countlog[i]:
+                #             total =total+count
+                #         sp =round(total/100) 
+                #         basespeed[i] =7+sp
+                        
+                #         if testspeeds[i][0] >0:
+                #             if testspeeds[i][1] >0:
+                #                 testspeeds[i] =(basespeed[i],basespeed[i])
+                #             else:
+                #                 testspeeds[i] =(basespeed[i],-basespeed[i])
+                #         else:
+                #             if testspeeds[i][1] >0:
+                #                 testspeeds[i] =(-basespeed[i],basespeed[i])
+                #             else:
+                #                 testspeeds[i] =(-basespeed[i],-basespeed[i])
+                        
+                        
+                        
+                #         for testball in testballslog[i]:
+                #             if testball[1]<=82.5:
+                #                 cblog[i].append(testball[0])
+                        
+                #         if len(cblog[i])>1:
+                #             if (abs(cblog[i][-2] - cblog[i][-1])/5) > (670/basespeed[i]):
+                #                 tag =i
+                #                 for c in range(len(mcblog[i])-1):
+                #                     total =0
+                #                     sp = 0
+                #                     for u in range(len(countlog[i])):
+                #                         if u <=c:
+                #                             total =total+countlog[i][u]
+                #                     sp =round(total/100) 
+                #                     if (abs(mcblog[i][c][0] - mcblog[i][c+1][0])/5) > (670/(7+sp)):
+                #                         tag =-1
+                                
+                #         # if len(cblog[i])>1:
+                #         #     for c in range(len(cblog[i])-1):
+                #         #         if (abs(cblog[i][c] - cblog[i][c+1])/5) > (670/basespeed[i]):
+                #         #             tag =i
+                #         #             break
+                #         if tag!=-1:
+                #             self.first = tag*5+20
+                #             break
+            elif self.side =='2P' and ball[1]<200 and self.isfirstsearch==True:
+                t = threading.Thread(target = self.firstsearch2p,args =(forms, bricks, bricksvel, prebricks))
+                t.start()
+                self.isfirstsearch=False
+                
+            
+        else:
+            # 不切球   N : None
+            # 切快球   S : Supper
+            # 切反彈球 I : Invert
+            ball,balls,prebricks,runframe,speed = self.Ball_path_computer(ball, speed, forms, bricks, bricksvel, balls, prebricks,action = 'N')
+            cutaddball,cutaddballs,ca_prebricks,runframe,ca_speed = self.Ball_path_computer(cutaddball, ca_speed,ca_forms , bricks, bricksvel, cutaddballs, ca_prebricks,action = 'S')                                                     
+            cutinvball,cutinvballs,ci_prebricks,runframe,ci_speed = self.Ball_path_computer(cutinvball, ci_speed, ci_forms, bricks, bricksvel, cutinvballs, ci_prebricks,action = 'I')
+            
+            
+        
+        
+        
         #------------------------------主要  End---------------------------------
         pres =[ball[0],cutaddball[0],cutinvball[0]]
         maxpos =max(pres)
@@ -215,19 +315,59 @@ class MLPlay:
         #     LO = 50
         #     L1 = 55
         #     L2 = 60
+        result =[]
+        while not self.q.empty():
+            result.append(self.q.get()) 
         
+        for item in result: 
+            if item[1] == self.firstsearch1p.__name__: 
+                self.first = item[0]
+            if item[1] == self.firstsearch2p.__name__: 
+                self.first = item[0]
         
         if not self.ball_served:          #還沒開球時
-            if abs(Error / runframe) > 5: #趕不上所以要移動
-                if Error > gip:
-                    command = "MOVE_RIGHT"
-                elif Error < -gip:
-                    command = "MOVE_LEFT"
+            if self.side=='1P':
+                if ball[1]<200:
+                    self.ball_served = True
+                    if Error > gip:
+                        command = "MOVE_RIGHT"
+                    elif Error < -gip:
+                        command = "MOVE_LEFT"
+                    else:
+                        command = "NONE"
                 else:
-                    command = "NONE"
-            else:                         #趕得上就直接開球
-                self.ball_served = True
-                command = "SERVE_TO_LEFT"
+                    if self.first!=220:
+                        Error =self.first-real[0]
+                        if Error > 2.5:
+                            command = "MOVE_RIGHT"
+                        elif Error < -2.5:
+                            command = "MOVE_LEFT"
+                        else:
+                            self.ball_served = True
+                            command = "SERVE_TO_LEFT"
+                    else:
+                        command = "NONE"
+            elif self.side=='2P':
+                if ball[1]>200:
+                    self.ball_served = True
+                    if Error > gip:
+                        command = "MOVE_RIGHT"
+                    elif Error < -gip:
+                        command = "MOVE_LEFT"
+                    else:
+                        command = "NONE"
+                else:
+                    if self.first!=220:
+                        Error =self.first-real[0]
+                        if Error > 2.5:
+                            command = "MOVE_RIGHT"
+                        elif Error < -2.5:
+                            command = "MOVE_LEFT"
+                        else:
+                            self.ball_served = True
+                            command = "SERVE_TO_LEFT"
+                    else:
+                        command = "NONE"
         else:                             #已經開球
         
             if (Error < margin and Error > -margin):
@@ -267,7 +407,7 @@ class MLPlay:
                 payload['precutinvball'] = cutinvball
                 payload['precutinvballlog'] = cutinvballs
                 payload['prebrickslog'] = prebricks
-                
+                payload['first'] = self.first
                 #要發布的主題和內容
                 if self.side =='1P':
                     self.client.publish("Try1P/MQTT", json.dumps(payload))
@@ -299,6 +439,7 @@ class MLPlay:
                 payload['precutinvball'] = cutinvball
                 payload['precutinvballlog'] = cutinvballs
                 payload['prebrickslog'] = prebricks
+                payload['first'] = self.first
                 #要發布的主題和內容
                 if self.side =='1P':
                     self.client.publish("Try1P/MQTT", json.dumps(payload))
@@ -355,18 +496,172 @@ class MLPlay:
         
         return command
     
+    # 子執行緒的工作函數
+    def firstsearch1p(self,forms, bricks, bricksvel, prebricks):
+        func_name = sys._getframe().f_code.co_name 
+        testball =[20,417.5]
+        testballs =[]
+        testballslog =[]
+        
+        countlog =[]
+        cblog =[]
+        mcblog =[]
+        
+        basespeed =[]
+        testspeeds =[]
+     
+        for i in range(0,165,5):
+            testballs.append([20+i,417.5])
+            testballslog.append([])
+            cblog.append([])
+            countlog.append([])
+            mcblog.append([])
+            mcblog[math.floor(i/5)].append(testballs[-1])
+            
+            basespeed.append(7)
+            testspeeds.append((-7,-7))
+        tag =-1
+        first =220
+        while(first==220):
+            for i in range(len(testballs)):
+                testballslog[i]=[]
+                testballslog[i].append(testballs[i])
+                testballs[i],testballslog[i],prebricks,runframe,testspeeds[i] = self.Ball_path_computer(testballs[i], testspeeds[i], forms, bricks, bricksvel, testballslog[i], prebricks,action = 'N')
+                mcblog[i].append(testballs[i])
+                countlog[i].append(670/basespeed[i])
+                total =0
+                sp = 0
+                for count in countlog[i]:
+                    total =total+count
+                sp =round(total/100) 
+                basespeed[i] =7+sp
+                
+                if testspeeds[i][0] >0:
+                    if testspeeds[i][1] >0:
+                        testspeeds[i] =(basespeed[i],basespeed[i])
+                    else:
+                        testspeeds[i] =(basespeed[i],-basespeed[i])
+                else:
+                    if testspeeds[i][1] >0:
+                        testspeeds[i] =(-basespeed[i],basespeed[i])
+                    else:
+                        testspeeds[i] =(-basespeed[i],-basespeed[i])
+                
+                
+                
+                for testball in testballslog[i]:
+                    if testball[1]<=82.5:
+                        cblog[i].append(testball[0])
+                
+                if len(cblog[i])>1:
+                    if (abs(cblog[i][-2] - cblog[i][-1])/5) > (670/basespeed[i]):
+                        tag =i
+                        for c in range(len(mcblog[i])-1):
+                            total =0
+                            sp = 0
+                            for u in range(len(countlog[i])):
+                                if u <=c:
+                                    total =total+countlog[i][u]
+                            sp =round(total/100) 
+                            if (abs(mcblog[i][c][0] - mcblog[i][c+1][0])/5) > (670/(7+sp)):
+                                tag =-1
+                        
+                # if len(cblog[i])>1:
+                #     for c in range(len(cblog[i])-1):
+                #         if (abs(cblog[i][c] - cblog[i][c+1])/5) > (670/basespeed[i]):
+                #             tag =i
+                #             break
+                if tag!=-1:
+                    first = tag*5+20
+                    break
+        self.q.put((first, func_name)) 
+    def firstsearch2p(self,forms, bricks, bricksvel, prebricks):
+        func_name = sys._getframe().f_code.co_name 
+        testball =[20,82.5]
+        testballs =[]
+        testballslog =[]
+        
+        countlog =[]
+        cblog =[]
+        mcblog =[]
+        
+        basespeed =[]
+        testspeeds =[]
+        
+        for i in range(0,165,5):
+            testballs.append([20+i,82.5])
+            testballslog.append([])
+            cblog.append([])
+            mcblog.append([])
+            mcblog[math.floor(i/5)].append(testballs[-1])
+            countlog.append([])
+            
+            basespeed.append(7)
+            testspeeds.append((7,7))
+        tag =-1
+        first=220
+        while(first==220):
+            for i in range(len(testballs)):
+                testballslog[i]=[]
+                testballslog[i].append(testballs[i])
+                testballs[i],testballslog[i],prebricks,runframe,testspeeds[i] = self.Ball_path_computer(testballs[i], testspeeds[i], forms, bricks, bricksvel, testballslog[i], prebricks,action = 'N')
+                mcblog[i].append(testballs[i])
+                countlog[i].append(670/basespeed[i])
+                total =0
+                sp = 0
+                for count in countlog[i]:
+                    total =total+count
+                sp =round(total/100) 
+                basespeed[i] =7+sp
+                
+                if testspeeds[i][0] >0:
+                    if testspeeds[i][1] >0:
+                        testspeeds[i] =(basespeed[i],basespeed[i])
+                    else:
+                        testspeeds[i] =(basespeed[i],-basespeed[i])
+                else:
+                    if testspeeds[i][1] >0:
+                        testspeeds[i] =(-basespeed[i],basespeed[i])
+                    else:
+                        testspeeds[i] =(-basespeed[i],-basespeed[i])
+                
+                
+                
+                for testball in testballslog[i]:
+                    if testball[1]>=417.5:
+                        cblog[i].append(testball[0])
+                        
+                
+                if len(cblog[i])>1:
+                    if (abs(cblog[i][-2] - cblog[i][-1])/5) > (670/basespeed[i]):
+                        tag =i
+                        for c in range(len(mcblog[i])-1):
+                            total =0
+                            sp = 0
+                            for u in range(len(countlog[i])):
+                                if u <=c:
+                                    total =total+countlog[i][u]
+                            sp =round(total/100) 
+                            if (abs(mcblog[i][c][0] - mcblog[i][c+1][0])/5) > (670/(7+sp)):
+                                tag =-1
+                                
+                if tag!=-1:
+                    first = tag*5+20
+                    break
+        self.q.put((first, func_name)) 
+    
     def GetAllCross(self,ball,speed,forms,bricks):
         points = []
         if len(forms)>0:
             for form in forms:
                 points.append( self.GetCross(form,ball,speed,'form',0))#掃描邊框的碰撞點
-        i=0
-        if bricks != None:
-            if len(bricks)>0:
-                for brick in bricks:
-                    if brick[0]!=None:
-                        points.append( self.GetCross(brick,ball,speed,'bricks',i))#掃描軟磚的碰撞點
-                    i+=1
+        # i=0
+        # if bricks != None:
+        #     if len(bricks)>0:
+        #         for brick in bricks:
+        #             if brick[0]!=None:
+        #                 points.append( self.GetCross(brick,ball,speed,'bricks',i))#掃描軟磚的碰撞點
+        #             i+=1
         return points
         
     def reset(self):
@@ -379,6 +674,8 @@ class MLPlay:
         self.blocker =[]
         self.blockervel =[]
         self.data =[]
+        self.first=220
+        self.isfirstsearch=True
         
     def Ball_path_computer(self,ball,velocity,forms,bricks,bricksvel, balls, prebricks,action):
         # N : None, S : Super, I : Invert
@@ -395,7 +692,7 @@ class MLPlay:
                 ball = self.updata_fail(self.side, balls)
                 break           
             
-            #bricks,prebricks,ball,balls,speed = self.updata_cross_bricks(bricks, bricksvel, frametime,ball, balls, srcspeed, speed, points, index, prebricks)
+            bricks,prebricks,ball,balls,speed = self.updata_cross_bricks(bricks, bricksvel, frametime,ball, balls, srcspeed, speed, points, index, prebricks)
                                                                         
                
             #球回到板子高度就跳離
@@ -409,7 +706,7 @@ class MLPlay:
             runframe+=1
             if runframe >=20: # timeout
                 break
-        return ball,balls,prebricks,runframe
+        return ball,balls,prebricks,runframe,speed
     
     def updata_cross_bricks(self,bricks,bricksvel,frametime,ball,balls,srcspeed,speed,points,index,prebricks):
         #-------更新障礙物的位置依據球到碰撞點的時間-----------begin
@@ -446,7 +743,10 @@ class MLPlay:
                     ball = points[index][0]
                     #障礙物移動到的位置
                     if len(bricksvel) > 0:
-                        newx = bricks[0][0][0]+2.5+bricksvel[0][0]*(frametime) 
+                        if bricksvel[0][0]>=0:
+                            newx = bricks[0][0][0]+2.5+5*(frametime) 
+                        elif bricksvel[0][0]<0:
+                            newx = bricks[0][0][0]+2.5-5*(frametime) 
                     else:
                         newx = bricks[0][0][0]+2.5+5*frametime #預設往右走
                 else:
@@ -463,7 +763,11 @@ class MLPlay:
                     ball = crosspoint
                     #障礙物移動到的位置
                     if len(bricksvel) > 0:
-                        newx = bricks[0][0][0]+2.5+bricksvel[0][0]*(crossframetime) 
+                        #newx = bricks[0][0][0]+2.5+bricksvel[0][0]*(crossframetime) 
+                        if bricksvel[0][0]>=0:
+                            newx = bricks[0][0][0]+2.5+5*(crossframetime) 
+                        elif bricksvel[0][0]<0:
+                            newx = bricks[0][0][0]+2.5-5*(crossframetime) 
                     else:
                         newx = bricks[0][0][0]+2.5+5*crossframetime #預設往右走
                 
@@ -557,7 +861,7 @@ class MLPlay:
                     
                     return ball,balls,speed,frametime,srcspeed,index
                 
-        return ball,balls,speed,None,None,None
+        return ball,balls,speed,0,None,None
             
     def GetCrossTime(self,Ball,Ballvel,bound,boundvel):
         TopLeft = bound[0]
