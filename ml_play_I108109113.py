@@ -93,18 +93,18 @@ class MLPlay:
         # 設置日期時間的格式
         self.ISOTIMEFORMAT = '%m/%d %H:%M:%S'
         
-        # 連線設定
-        # 初始化地端程式
-        self.client = mqtt.Client()
+        # # 連線設定
+        # # 初始化地端程式
+        # self.client = mqtt.Client()
         
-        # 設定登入帳號密碼
-        self.client.username_pw_set("try","1234")
+        # # 設定登入帳號密碼
+        # self.client.username_pw_set("try","1234")
         
-        # 設定連線資訊(IP, Port, 連線時間)
-        self.client.connect("localhost", 1883, 60)
-        self.millis = int(round(time.time() * 1000))
-        self.tick = 0
-        self.Timeout = 100
+        # # 設定連線資訊(IP, Port, 連線時間)
+        # self.client.connect("localhost", 1883, 60)
+        # self.millis = int(round(time.time() * 1000))
+        # self.tick = 0
+        # self.Timeout = 100
         self.first =220
         self.isfirstsearch=True
         self.q = queue.Queue() 
@@ -114,7 +114,7 @@ class MLPlay:
         Generate the command according to the received scene information
         """
         
-        self.tick =int(round(time.time() * 1000)) - self.millis
+        #self.tick =int(round(time.time() * 1000)) - self.millis
         
         if scene_info["status"] != "GAME_ALIVE":
             # 開啟輸出的 CSV 檔案
@@ -309,72 +309,72 @@ class MLPlay:
                 else:                     #還沒到切球時機就等待
                     command = "NONE"
                     
-        if self.tick >=self.Timeout:
-            self.millis = int(round(time.time() * 1000))
-            if "blocker" in scene_info.keys():
-                tmp = [scene_info["frame"],scene_info["status"],self.side,command,scene_info["platform_1P"][0]+20,scene_info["platform_1P"][1],scene_info["platform_2P"][0]+20,scene_info["platform_2P"][1]+30,scene_info["ball"][0]+2.5,scene_info["ball"][1]+2.5,scene_info["ball_speed"][0],scene_info["ball_speed"][1],scene_info["blocker"][0],scene_info["blocker"][1],ball[0],ball[1]]
-                if balls!=None:
-                    for ball in balls:
-                        tmp.append(ball[0])
-                        tmp.append(ball[1])
+        # if self.tick >=self.Timeout:
+        #     self.millis = int(round(time.time() * 1000))
+        #     if "blocker" in scene_info.keys():
+        #         tmp = [scene_info["frame"],scene_info["status"],self.side,command,scene_info["platform_1P"][0]+20,scene_info["platform_1P"][1],scene_info["platform_2P"][0]+20,scene_info["platform_2P"][1]+30,scene_info["ball"][0]+2.5,scene_info["ball"][1]+2.5,scene_info["ball_speed"][0],scene_info["ball_speed"][1],scene_info["blocker"][0],scene_info["blocker"][1],ball[0],ball[1]]
+        #         if balls!=None:
+        #             for ball in balls:
+        #                 tmp.append(ball[0])
+        #                 tmp.append(ball[1])
                     
-                #payload = {'frame' : scene_info["frame"] , 'status' : scene_info["status"]}
-                payload ={}
-                payload['frame'] = scene_info["frame"]
-                payload['status'] = scene_info["status"]
-                payload['side'] = self.side
-                payload['command'] = command
-                payload['platform_1P'] = [scene_info["platform_1P"][0]+20,scene_info["platform_1P"][1]]
-                payload['platform_2P'] = [scene_info["platform_2P"][0]+20,scene_info["platform_2P"][1]+30]
-                payload['ball'] = [scene_info["ball"][0]+2.5,scene_info["ball"][1]+2.5]
-                payload['ball_speed'] = scene_info["ball_speed"]
-                payload['blocker'] = scene_info["blocker"]
-                payload['preball'] = ball
-                payload['preballlog'] = balls
-                payload['precutaddball'] = cutaddball
-                payload['precutaddballlog'] = cutaddballs
-                payload['precutinvball'] = cutinvball
-                payload['precutinvballlog'] = cutinvballs
-                payload['prebrickslog'] = prebricks
-                payload['first'] = self.first
-                #要發布的主題和內容
-                if self.side =='1P':
-                    self.client.publish("Try1P/MQTT", json.dumps(payload))
-                if self.side =='2P':
-                    self.client.publish("Try2P/MQTT", json.dumps(payload))
-                self.data.append(tmp)
-            else:
-                tmp = [scene_info["frame"],scene_info["status"],self.side,command,scene_info["platform_1P"][0]+20,scene_info["platform_1P"][1],scene_info["platform_2P"][0]+20,scene_info["platform_2P"][1]+30,scene_info["ball"][0]+2.5,scene_info["ball"][1]+2.5,scene_info["ball_speed"][0],scene_info["ball_speed"][1],'None','None',ball[0],ball[1]]
-                if balls!=None:
-                    for ball in balls:
-                        tmp.append(ball[0])
-                        tmp.append(ball[1])
+        #         #payload = {'frame' : scene_info["frame"] , 'status' : scene_info["status"]}
+        #         payload ={}
+        #         payload['frame'] = scene_info["frame"]
+        #         payload['status'] = scene_info["status"]
+        #         payload['side'] = self.side
+        #         payload['command'] = command
+        #         payload['platform_1P'] = [scene_info["platform_1P"][0]+20,scene_info["platform_1P"][1]]
+        #         payload['platform_2P'] = [scene_info["platform_2P"][0]+20,scene_info["platform_2P"][1]+30]
+        #         payload['ball'] = [scene_info["ball"][0]+2.5,scene_info["ball"][1]+2.5]
+        #         payload['ball_speed'] = scene_info["ball_speed"]
+        #         payload['blocker'] = scene_info["blocker"]
+        #         payload['preball'] = ball
+        #         payload['preballlog'] = balls
+        #         payload['precutaddball'] = cutaddball
+        #         payload['precutaddballlog'] = cutaddballs
+        #         payload['precutinvball'] = cutinvball
+        #         payload['precutinvballlog'] = cutinvballs
+        #         payload['prebrickslog'] = prebricks
+        #         payload['first'] = self.first
+        #         #要發布的主題和內容
+        #         if self.side =='1P':
+        #             self.client.publish("Try1P/MQTT", json.dumps(payload))
+        #         if self.side =='2P':
+        #             self.client.publish("Try2P/MQTT", json.dumps(payload))
+        #         self.data.append(tmp)
+        #     else:
+        #         tmp = [scene_info["frame"],scene_info["status"],self.side,command,scene_info["platform_1P"][0]+20,scene_info["platform_1P"][1],scene_info["platform_2P"][0]+20,scene_info["platform_2P"][1]+30,scene_info["ball"][0]+2.5,scene_info["ball"][1]+2.5,scene_info["ball_speed"][0],scene_info["ball_speed"][1],'None','None',ball[0],ball[1]]
+        #         if balls!=None:
+        #             for ball in balls:
+        #                 tmp.append(ball[0])
+        #                 tmp.append(ball[1])
                 
-                #payload = {'frame' : scene_info["frame"] , 'status' : scene_info["status"]}
-                payload ={}
-                payload['frame'] = scene_info["frame"]
-                payload['status'] = scene_info["status"]
-                payload['side'] = self.side
-                payload['command'] = command
-                payload['platform_1P'] = [scene_info["platform_1P"][0]+20,scene_info["platform_1P"][1]]
-                payload['platform_2P'] = [scene_info["platform_2P"][0]+20,scene_info["platform_2P"][1]+30]
-                payload['ball'] = [scene_info["ball"][0]+2.5,scene_info["ball"][1]+2.5]
-                payload['ball_speed'] = scene_info["ball_speed"]
-                payload['blocker'] = [None,None]
-                payload['preball'] = ball
-                payload['preballlog'] = balls
-                payload['precutaddball'] = cutaddball
-                payload['precutaddballlog'] = cutaddballs
-                payload['precutinvball'] = cutinvball
-                payload['precutinvballlog'] = cutinvballs
-                payload['prebrickslog'] = prebricks
-                payload['first'] = self.first
-                #要發布的主題和內容
-                if self.side =='1P':
-                    self.client.publish("Try1P/MQTT", json.dumps(payload))
-                if self.side =='2P':
-                    self.client.publish("Try2P/MQTT", json.dumps(payload))
-                self.data.append(tmp)
+        #         #payload = {'frame' : scene_info["frame"] , 'status' : scene_info["status"]}
+        #         payload ={}
+        #         payload['frame'] = scene_info["frame"]
+        #         payload['status'] = scene_info["status"]
+        #         payload['side'] = self.side
+        #         payload['command'] = command
+        #         payload['platform_1P'] = [scene_info["platform_1P"][0]+20,scene_info["platform_1P"][1]]
+        #         payload['platform_2P'] = [scene_info["platform_2P"][0]+20,scene_info["platform_2P"][1]+30]
+        #         payload['ball'] = [scene_info["ball"][0]+2.5,scene_info["ball"][1]+2.5]
+        #         payload['ball_speed'] = scene_info["ball_speed"]
+        #         payload['blocker'] = [None,None]
+        #         payload['preball'] = ball
+        #         payload['preballlog'] = balls
+        #         payload['precutaddball'] = cutaddball
+        #         payload['precutaddballlog'] = cutaddballs
+        #         payload['precutinvball'] = cutinvball
+        #         payload['precutinvballlog'] = cutinvballs
+        #         payload['prebrickslog'] = prebricks
+        #         payload['first'] = self.first
+        #         #要發布的主題和內容
+        #         if self.side =='1P':
+        #             self.client.publish("Try1P/MQTT", json.dumps(payload))
+        #         if self.side =='2P':
+        #             self.client.publish("Try2P/MQTT", json.dumps(payload))
+        #         self.data.append(tmp)
             # if (nball[1] >= L2) and (len(self.ballvel) >= 1) and(Error < margin and Error > -margin):
             #     if  self.ballvel[-1][0] >= 5:
             #         #command = "MOVE_LEFT"
