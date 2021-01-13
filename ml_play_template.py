@@ -89,6 +89,8 @@ class MLPlay:
         self.blocker =[]
         self.blockervel =[]
         self.data =[]
+        self.coms =[]
+        self.lvl = 'EASY'
         
         # 設置日期時間的格式
         self.ISOTIMEFORMAT = '%m/%d %H:%M:%S'
@@ -106,6 +108,7 @@ class MLPlay:
         self.tick = 0
         self.Timeout = 100
         self.first =220
+        self.diedspeed = 0
         self.isfirstsearch=True
         self.q = queue.Queue() 
 
@@ -127,8 +130,9 @@ class MLPlay:
                 lens =len(self.data)
                 for i in range(lens):
                     writer.writerow(self.data[i])
-    
             
+            if self.side =='1P':
+                print('ball_speed : ',scene_info["ball_speed"])
             self.reset()
             return "RESET"
         
@@ -160,16 +164,31 @@ class MLPlay:
                 ca_speed =(7,7) #初始假設的球速
                 ci_speed =(7,7) #初始假設的球速
         
+        if (abs(speed[0]) != abs(speed[1])) and self.lvl =='EASY':
+            self.lvl =='NORMAL'
         
         
         bricks =[]
         bricksvel =[]
+        cabricks =[]
+        cabricksvel =[]
+        cibricks =[]
+        cibricksvel =[]
         if "blocker" in scene_info.keys():
             bricks.append(self.GetBound(pos=scene_info["blocker"],size=(30,20)))    #得到軟磚膨脹的邊界
+            
+            cabricks.append(bricks[-1])
+            cibricks.append(bricks[-1])
             self.blocker.append(bricks[0])
-        
+            
+            if self.lvl =='EASY':
+                self.lvl ='HARD'
+                
+             
         if len(self.blocker)>1:
-            bricksvel.append((self.blocker[-1][0][0]-self.blocker[-2][0][0],0))
+            bricksvel.append([self.blocker[-1][0][0]-self.blocker[-2][0][0],0])
+            cabricksvel.append(bricksvel[-1])
+            cibricksvel.append(bricksvel[-1])
             self.blockervel.append(bricksvel[0])
         
         #------------------------------主要  初始化---------------------------------
@@ -200,102 +219,29 @@ class MLPlay:
         
         #------------------------------主要  演算---------------------------------
         #開局演算
-        if (not self.ball_served) and len(bricks)==0 : #是開局方 且是 還沒開球時 且是 EASY 才演
-            if self.side =='1P' and ball[1]>200 and self.isfirstsearch==True:
+        if (not self.ball_served) : #是開局方 且是 還沒開球時 且是 EASY 才演
+            if self.side =='1P' and ball[1]>350 and self.isfirstsearch==True:
                 
                 t = threading.Thread(target = self.firstsearch1p,args =(forms, bricks, bricksvel, prebricks))
                 t.start()
                 self.isfirstsearch=False
-                # testball =[20,417.5]
-                # testballs =[]
-                # testballslog =[]
+                #self.first =45
                 
-                # countlog =[]
-                # cblog =[]
-                # mcblog =[]
-                
-                # basespeed =[]
-                # testspeeds =[]
-             
-                # for i in range(0,165,5):
-                #     testballs.append([20+i,417.5])
-                #     testballslog.append([])
-                #     cblog.append([])
-                #     countlog.append([])
-                #     mcblog.append([])
-                #     mcblog[math.floor(i/5)].append(testballs[-1])
-                    
-                #     basespeed.append(7)
-                #     testspeeds.append((-7,-7))
-                # tag =-1
-                # while(self.first==220):
-                #     for i in range(len(testballs)):
-                #         testballslog[i]=[]
-                #         testballslog[i].append(testballs[i])
-                #         testballs[i],testballslog[i],prebricks,runframe,testspeeds[i] = self.Ball_path_computer(testballs[i], testspeeds[i], forms, bricks, bricksvel, testballslog[i], prebricks,action = 'N')
-                #         mcblog[i].append(testballs[i])
-                #         countlog[i].append(670/basespeed[i])
-                #         total =0
-                #         sp = 0
-                #         for count in countlog[i]:
-                #             total =total+count
-                #         sp =round(total/100) 
-                #         basespeed[i] =7+sp
-                        
-                #         if testspeeds[i][0] >0:
-                #             if testspeeds[i][1] >0:
-                #                 testspeeds[i] =(basespeed[i],basespeed[i])
-                #             else:
-                #                 testspeeds[i] =(basespeed[i],-basespeed[i])
-                #         else:
-                #             if testspeeds[i][1] >0:
-                #                 testspeeds[i] =(-basespeed[i],basespeed[i])
-                #             else:
-                #                 testspeeds[i] =(-basespeed[i],-basespeed[i])
-                        
-                        
-                        
-                #         for testball in testballslog[i]:
-                #             if testball[1]<=82.5:
-                #                 cblog[i].append(testball[0])
-                        
-                #         if len(cblog[i])>1:
-                #             if (abs(cblog[i][-2] - cblog[i][-1])/5) > (670/basespeed[i]):
-                #                 tag =i
-                #                 for c in range(len(mcblog[i])-1):
-                #                     total =0
-                #                     sp = 0
-                #                     for u in range(len(countlog[i])):
-                #                         if u <=c:
-                #                             total =total+countlog[i][u]
-                #                     sp =round(total/100) 
-                #                     if (abs(mcblog[i][c][0] - mcblog[i][c+1][0])/5) > (670/(7+sp)):
-                #                         tag =-1
-                                
-                #         # if len(cblog[i])>1:
-                #         #     for c in range(len(cblog[i])-1):
-                #         #         if (abs(cblog[i][c] - cblog[i][c+1])/5) > (670/basespeed[i]):
-                #         #             tag =i
-                #         #             break
-                #         if tag!=-1:
-                #             self.first = tag*5+20
-                #             break
-            elif self.side =='2P' and ball[1]<200 and self.isfirstsearch==True:
+            elif self.side =='2P' and ball[1]<150 and self.isfirstsearch==True:
                 t = threading.Thread(target = self.firstsearch2p,args =(forms, bricks, bricksvel, prebricks))
                 t.start()
                 self.isfirstsearch=False
-                
+                #self.first =45
             
         else:
             # 不切球   N : None
             # 切快球   S : Supper
             # 切反彈球 I : Invert
-            ball,balls,prebricks,runframe,speed = self.Ball_path_computer(ball, speed, forms, bricks, bricksvel, balls, prebricks,action = 'N')
-            cutaddball,cutaddballs,ca_prebricks,runframe,ca_speed = self.Ball_path_computer(cutaddball, ca_speed,ca_forms , bricks, bricksvel, cutaddballs, ca_prebricks,action = 'S')                                                     
-            cutinvball,cutinvballs,ci_prebricks,runframe,ci_speed = self.Ball_path_computer(cutinvball, ci_speed, ci_forms, bricks, bricksvel, cutinvballs, ci_prebricks,action = 'I')
+            ball,balls,bricks, bricksvel,prebricks,runframe,speed = self.Ball_path_computer(ball, speed, forms, bricks, bricksvel, balls, prebricks,action = 'N')
+            cutaddball,cutaddballs,cabricks, cabricksvel,ca_prebricks,runframe,ca_speed = self.Ball_path_computer(cutaddball, ca_speed,ca_forms , cabricks, cabricksvel, cutaddballs, ca_prebricks,action = 'S')                                                     
+            cutinvball,cutinvballs,cibricks, cibricksvel,ci_prebricks,runframe,ci_speed = self.Ball_path_computer(cutinvball, ci_speed, ci_forms, cibricks, cibricksvel, cutinvballs, ci_prebricks,action = 'I')
             
-            
-        
+       
         
         
         #------------------------------主要  End---------------------------------
@@ -305,8 +251,8 @@ class MLPlay:
         mix = (maxpos + minpos)/2
         Error = mix - real[0]         #追隨誤差  值越大要右移，越小要左移 
         
-        margin = 0.5
-        gip=0.5
+        margin = 10
+        gip=4
         # if self.side =='1P':
         #     L0 = 420
         #     L1 = 415
@@ -320,14 +266,17 @@ class MLPlay:
             result.append(self.q.get()) 
         
         for item in result: 
-            if item[1] == self.firstsearch1p.__name__: 
+            #self.first = item[0]
+            if item[2] == self.firstsearch1p.__name__: 
                 self.first = item[0]
-            if item[1] == self.firstsearch2p.__name__: 
+                self.diedspeed =  item[1]
+            if item[2] == self.firstsearch2p.__name__: 
                 self.first = item[0]
+                self.diedspeed =  item[1]
         
         if not self.ball_served:          #還沒開球時
             if self.side=='1P':
-                if ball[1]<200:
+                if ball[1]<350:
                     self.ball_served = True
                     if Error > gip:
                         command = "MOVE_RIGHT"
@@ -348,7 +297,7 @@ class MLPlay:
                     else:
                         command = "NONE"
             elif self.side=='2P':
-                if ball[1]>200:
+                if ball[1]>150:
                     self.ball_served = True
                     if Error > gip:
                         command = "MOVE_RIGHT"
@@ -369,16 +318,39 @@ class MLPlay:
                     else:
                         command = "NONE"
         else:                             #已經開球
+            # S N I
+            policy =random.choice(["S","N","I"])   
         
-            if (Error < margin and Error > -margin):
-                command = "NONE"
-            else:
+            ball = self.GetCenter(scene_info["ball"],(5,5))     #得到球的中心座標
+            speed = scene_info["ball_speed"]
+            depth = self.cutballdepth(self.side, ball, speed, real)
+            
+            if depth<(0-abs(1.0*speed[1])) or ( (Error >=margin) or (Error <=-margin)):
                 if Error > gip:
                     command = "MOVE_RIGHT"
                 elif Error < -gip:
                     command = "MOVE_LEFT"
-                else:                     #還沒到切球時機就等待
+                else:
                     command = "NONE"
+            else:                     #還沒到切球時機就等待
+                
+                if policy =='S':
+                    if speed[0]>0:
+                        command = "MOVE_RIGHT"
+                    elif speed[0]<0:
+                        command = "MOVE_LEFT"
+                    else:
+                        command = "NONE"
+                elif policy =='I':
+                    if speed[0]<0:
+                        command = "MOVE_RIGHT"
+                    elif speed[0]>0:
+                        command = "MOVE_LEFT"
+                    else:
+                        command = "NONE"
+                else:
+                    command = "NONE"
+                
                     
         if self.tick >=self.Timeout:
             self.millis = int(round(time.time() * 1000))
@@ -402,12 +374,18 @@ class MLPlay:
                 payload['blocker'] = scene_info["blocker"]
                 payload['preball'] = ball
                 payload['preballlog'] = balls
+                #payload['preendbrick'] = bricks[-1][0]
+                # payload['preendcabrick'] = cabricks[0][0]
+                # payload['preendcibrick'] = cibricks[0][0]
                 payload['precutaddball'] = cutaddball
                 payload['precutaddballlog'] = cutaddballs
                 payload['precutinvball'] = cutinvball
                 payload['precutinvballlog'] = cutinvballs
-                payload['prebrickslog'] = prebricks
+                payload['prebrickslog'] = prebricks[1:]
+                payload['caprebrickslog'] = ca_prebricks[1:]
+                payload['ciprebrickslog'] = ci_prebricks[1:]
                 payload['first'] = self.first
+                payload['diedspeed'] = self.diedspeed
                 #要發布的主題和內容
                 if self.side =='1P':
                     self.client.publish("Try1P/MQTT", json.dumps(payload))
@@ -434,12 +412,18 @@ class MLPlay:
                 payload['blocker'] = [None,None]
                 payload['preball'] = ball
                 payload['preballlog'] = balls
+                #payload['preendbrick'] = bricks[-1][0]
+                # payload['preendcabrick'] = cabricks[0][0]
+                # payload['preendcibrick'] = cibricks[0][0]
                 payload['precutaddball'] = cutaddball
                 payload['precutaddballlog'] = cutaddballs
                 payload['precutinvball'] = cutinvball
                 payload['precutinvballlog'] = cutinvballs
-                payload['prebrickslog'] = prebricks
+                payload['prebrickslog'] = prebricks[1:]
+                payload['caprebrickslog'] = ca_prebricks[1:]
+                payload['ciprebrickslog'] = ci_prebricks[1:]
                 payload['first'] = self.first
+                payload['diedspeed'] = self.diedspeed
                 #要發布的主題和內容
                 if self.side =='1P':
                     self.client.publish("Try1P/MQTT", json.dumps(payload))
@@ -492,9 +476,34 @@ class MLPlay:
             del self.ballvel[0]
             
             
-            
         
+        # command = self.coms[-1]
+        # del self.coms[-1]
         return command
+    
+    def cutballdepth(self,side,ball,ballvel,platform):
+        ## N : None, S : Super, I : Invert
+        
+        # Suggests =["S","N","I"]
+        
+        # Error = preball[0] - platform[0]
+        # coms=["MOVE_RIGHT","MOVE_LEFT","NONE"]
+        
+        # commands=[]
+        
+        
+        # get 碰撞深度
+        frametime = 1
+        orivel = abs(ballvel[1])
+        if ballvel[1]>0:
+            orivel =17.5
+        elif ballvel[1]<0:
+            orivel =-17.5
+        if side =='1P':
+            depth = (orivel * frametime + ball[1]) - platform[1]
+        elif side =='2P':
+            depth = platform[1] - (orivel * frametime + ball[1])
+        return depth
     
     # 子執行緒的工作函數
     def firstsearch1p(self,forms, bricks, bricksvel, prebricks):
@@ -522,11 +531,12 @@ class MLPlay:
             testspeeds.append((-7,-7))
         tag =-1
         first =220
+        diedspeed = basespeed[-1]
         while(first==220):
             for i in range(len(testballs)):
                 testballslog[i]=[]
                 testballslog[i].append(testballs[i])
-                testballs[i],testballslog[i],prebricks,runframe,testspeeds[i] = self.Ball_path_computer(testballs[i], testspeeds[i], forms, bricks, bricksvel, testballslog[i], prebricks,action = 'N')
+                testballs[i],testballslog[i],bricks, bricksvel,prebricks,runframe,testspeeds[i] = self.Ball_path_computer(testballs[i], testspeeds[i], forms, bricks, bricksvel, testballslog[i], prebricks,action = 'N')
                 mcblog[i].append(testballs[i])
                 countlog[i].append(670/basespeed[i])
                 total =0
@@ -535,7 +545,7 @@ class MLPlay:
                     total =total+count
                 sp =round(total/100) 
                 basespeed[i] =7+sp
-                
+                diedspeed = 7+sp
                 if testspeeds[i][0] >0:
                     if testspeeds[i][1] >0:
                         testspeeds[i] =(basespeed[i],basespeed[i])
@@ -552,9 +562,9 @@ class MLPlay:
                 for testball in testballslog[i]:
                     if testball[1]<=82.5:
                         cblog[i].append(testball[0])
-                
+                rng = -10
                 if len(cblog[i])>1:
-                    if (abs(cblog[i][-2] - cblog[i][-1])/5) > (670/basespeed[i]):
+                    if ((abs(cblog[i][-2] - cblog[i][-1])-rng)/5) > (670/basespeed[i]):
                         tag =i
                         for c in range(len(mcblog[i])-1):
                             total =0
@@ -563,7 +573,7 @@ class MLPlay:
                                 if u <=c:
                                     total =total+countlog[i][u]
                             sp =round(total/100) 
-                            if (abs(mcblog[i][c][0] - mcblog[i][c+1][0])/5) > (670/(7+sp)):
+                            if ((abs(mcblog[i][c][0] - mcblog[i][c+1][0])-rng)/5) > (670/(7+sp)):
                                 tag =-1
                         
                 # if len(cblog[i])>1:
@@ -571,10 +581,11 @@ class MLPlay:
                 #         if (abs(cblog[i][c] - cblog[i][c+1])/5) > (670/basespeed[i]):
                 #             tag =i
                 #             break
-                if tag!=-1:
-                    first = tag*5+20
-                    break
-        self.q.put((first, func_name)) 
+                    if tag!=-1:
+                        first = tag*5+20
+                        print('first',first,(7+sp))
+                        break
+        self.q.put((first,diedspeed, func_name)) 
     def firstsearch2p(self,forms, bricks, bricksvel, prebricks):
         func_name = sys._getframe().f_code.co_name 
         testball =[20,82.5]
@@ -600,11 +611,12 @@ class MLPlay:
             testspeeds.append((7,7))
         tag =-1
         first=220
+        diedspeed = basespeed[-1]
         while(first==220):
             for i in range(len(testballs)):
                 testballslog[i]=[]
                 testballslog[i].append(testballs[i])
-                testballs[i],testballslog[i],prebricks,runframe,testspeeds[i] = self.Ball_path_computer(testballs[i], testspeeds[i], forms, bricks, bricksvel, testballslog[i], prebricks,action = 'N')
+                testballs[i],testballslog[i],bricks, bricksvel,prebricks,runframe,testspeeds[i] = self.Ball_path_computer(testballs[i], testspeeds[i], forms, bricks, bricksvel, testballslog[i], prebricks,action = 'N')
                 mcblog[i].append(testballs[i])
                 countlog[i].append(670/basespeed[i])
                 total =0
@@ -613,6 +625,7 @@ class MLPlay:
                     total =total+count
                 sp =round(total/100) 
                 basespeed[i] =7+sp
+                diedspeed = 7+sp
                 
                 if testspeeds[i][0] >0:
                     if testspeeds[i][1] >0:
@@ -631,9 +644,9 @@ class MLPlay:
                     if testball[1]>=417.5:
                         cblog[i].append(testball[0])
                         
-                
+                rng = -10
                 if len(cblog[i])>1:
-                    if (abs(cblog[i][-2] - cblog[i][-1])/5) > (670/basespeed[i]):
+                    if ((abs(cblog[i][-2] - cblog[i][-1])-rng)/5) > (670/basespeed[i]):
                         tag =i
                         for c in range(len(mcblog[i])-1):
                             total =0
@@ -642,13 +655,14 @@ class MLPlay:
                                 if u <=c:
                                     total =total+countlog[i][u]
                             sp =round(total/100) 
-                            if (abs(mcblog[i][c][0] - mcblog[i][c+1][0])/5) > (670/(7+sp)):
+                            if ((abs(mcblog[i][c][0] - mcblog[i][c+1][0])-rng)/5) > (670/(7+sp)):
                                 tag =-1
                                 
-                if tag!=-1:
-                    first = tag*5+20
-                    break
-        self.q.put((first, func_name)) 
+                    if tag!=-1:
+                        first = tag*5+20
+                        print('first',first,(7+sp))
+                        break
+        self.q.put((first,diedspeed, func_name)) 
     
     def GetAllCross(self,ball,speed,forms,bricks):
         points = []
@@ -676,120 +690,362 @@ class MLPlay:
         self.data =[]
         self.first=220
         self.isfirstsearch=True
+        self.coms =[]
+        self.diedspeed = 0
+        
+    def getlimmittime(self,posx,vel,maxx,time):
+        newx = posx+vel*time
+        if vel!=0:
+            if newx>=maxx:
+                newtime=abs((maxx-posx)/vel)
+            elif newx<=0:
+                newtime=abs((posx-0)/vel)
+            else:
+                newtime = time
+        else:
+            newtime = time
+        return newtime
+    
+    def policy_search_computer(self,ball,velocity,forms,bricks,bricksvel, balls, prebricks,action):
+        attball = ball
+        if self.side =='1P' and ball[1]>=417.5 and velocity[1]>0:
+            orivel =abs( velocity[1])
+            nv = []
+            
+        elif self.side =='2P' and ball[1]<=82.5 and velocity[1]<0:
+            orivel =abs( velocity[1])
         
     def Ball_path_computer(self,ball,velocity,forms,bricks,bricksvel, balls, prebricks,action):
         # N : None, S : Super, I : Invert
         # act =['N','S','I']
         runframe =1
         speed = velocity
+        srcbricks = bricks
+        #tmp = self.GetBoundPos(srcbricks[0])
+        if len(bricksvel)==0:
+            bricksvel.append([5,0])
+        srcbricksvel = bricksvel
+        #totalframetime = 0
+        dis = 0
         while True:
             points = []
             points = self.GetAllCross(ball,speed,forms,bricks)
             
-            ball,balls,speed,frametime,srcspeed,index = self.updata_ball(points,speed,ball,balls,action)
-                                        
-            if ball == None:    #例外
-                ball = self.updata_fail(self.side, balls)
-                break           
+            if points ==None:
+                # if self.side =='1P' and action =='N':
+                #     print('points none',ball,speed)
+                break
             
-            bricks,prebricks,ball,balls,speed = self.updata_cross_bricks(bricks, bricksvel, frametime,ball, balls, srcspeed, speed, points, index, prebricks)
-                                                                        
-               
+            ball,balls,speed,frametime,srcspeed,index = self.updata_ball(points,speed,ball,balls,action)
+            #totalframetime = totalframetime+frametime   
+            if len(balls)>=2:
+                dis = dis + abs(balls[-1][1]-balls[-2][1])                    
+            if ball == None or balls==None:    #例外
+                ball = self.updata_fail(self.side, balls)
+                break  
+            
+            if len(balls)>=2 and action =='N' and len(bricks)>0:
+                posx =bricks[0][0][0]+2.5
+                vel = bricksvel[0][0]
+                maxx =170
+                srctime = frametime
+                srcspeed = srcspeed
+                newtime = self.getlimmittime(posx,vel,maxx,srctime)
+                if newtime<frametime and newtime!=0:
+                    bricks,bricksvel,prebricks,ball,balls,speed,frametime = self.updata_cross_bricks(bricks, bricksvel, newtime,ball, balls, srcspeed, speed, points, index, prebricks)
+                    speed = srcspeed
+                else:
+                    bricks,bricksvel,prebricks,ball,balls,speed,frametime = self.updata_cross_bricks(bricks, bricksvel, frametime,ball, balls, srcspeed, speed, points, index, prebricks)
+                #bricks,bricksvel,prebricks,ball,balls,speed,frametime = self.updata_cross_bricks(bricks, bricksvel, 1,ball, balls, srcspeed, speed, points, index, prebricks)
+            
+            #記錄迴圈次數
+            
+            
+           
+            
             #球回到板子高度就跳離
             if self.side =='1P':
-                if ball[1] >=(420-5):
+                if ball[1] >=(420-2.5):
                     break
             if self.side =='2P':
-                if ball[1] <=(50+30+5):
+                if ball[1] <=(50+30+2.5):
                     break
-            #記錄迴圈次數
-            runframe+=1
-            if runframe >=20: # timeout
+            
+            runframe=runframe + 1
+            if runframe >=25: # timeout
                 break
-        return ball,balls,prebricks,runframe,speed
+        
+        # tmptime = totalframetime
+        
+        # if abs(speed[1]) !=0:
+        #     totalframetime = (dis) /abs(speed[1])
+        # else:
+        #      totalframetime = (dis) /abs(7)
+        
+        # tmp = self.GetBoundPos(srcbricks[0])
+        # if len(srcbricksvel) > 0:
+        #     if srcbricksvel[0][0]>0:
+        #         newx = tmp[0]+srcbricksvel[0][0]*(totalframetime) #障礙物往右走
+        #     elif srcbricksvel[0][0]<0:
+        #         newx = tmp[0]+srcbricksvel[0][0]*(totalframetime) #障礙物往左走
+        #     else:
+        #         newx = tmp[0]+(5*(totalframetime)) #預設往右走
+        # else:
+        #     newx = tmp[0]+(5*(totalframetime)) #預設往右走
+        
+        # q = abs(newx//(200-30))
+        # mod =abs( newx%(200-30))
+        # q2 =q%2
+        # v = 5
+        # if q2 ==1:
+        #     mod = (200-30)-mod
+        #     v=-5
+        # newx = mod
+        # if len(bricksvel)>0:
+        #     bricksvel[0][0] = v
+        # else:
+        #     bricksvel.append([v,0])
+            
+        # bricks.append(self.GetBound(pos=[newx,tmp[1]],size=(30,20)))  
+        
+        # if self.side =='1P' and action =='N':
+        #     print('tt',math.floor(tmptime),'total' ,math.floor(totalframetime),'x',math.floor(newx))
+        
+         
+            
+            
+            
+        return ball,balls,bricks,bricksvel,prebricks,runframe,speed
     
+    def move(self,posx,velx,maxx,time):
+        movex = posx+velx*time
+        q = abs(movex//(maxx))
+        mod =abs( movex%(maxx))
+        q2 =q%2
+        v = 5
+        if q2 ==1:
+            mod = (200-30)-mod
+            v=-5
+        newx = mod
+        if q!=0:
+            newv = v
+        else:
+            newv = velx
+        return newx,newv
+        
     def updata_cross_bricks(self,bricks,bricksvel,frametime,ball,balls,srcspeed,speed,points,index,prebricks):
         #-------更新障礙物的位置依據球到碰撞點的時間-----------begin
         if len(bricks) > 0:
-            if len(bricksvel) > 0:
-                if bricksvel[0][0]>0:
-                    newx = bricks[0][0][0]+5*frametime #障礙物往右走
-                else:
-                    newx = bricks[0][0][0]-5*frametime #障礙物往左走
-            else:
-                newx = bricks[0][0][0]+(5*frametime) #預設往右走
-            srcbrick = (bricks[0][0][0]+2.5,bricks[0][0][1]+2.5)
-            newbrick = (newx+2.5,bricks[0][0][1]+2.5)
-        
-        
-            crossbound = self.GetBound(pos=srcbrick,size=(newx+30+2.5,20))
-            cross = self.GetCross(crossbound,balls[-2],srcspeed,'bricks',0)
-            #判斷是否交越障礙物
-            if cross[1] != 99999999:
-                #交越點
-                crosspoint = cross[0]   
+            brickx = bricks[0][0][0]+2.5
+            bricky = bricks[0][0][1]+2.5
+            brickvel = bricksvel[0][0]
+            newx,vel=self.move(brickx,brickvel, 170, frametime)
+            
+            srcvel = brickvel
+            newvel = vel
+            srcbrick = (brickx,bricky)
+            newbrick = (newx,bricky)
+            #交越點時間
+            crosspoint,crossframetime,crossinv,newTopLeftx = self.GetCrossTime(balls[-2],srcspeed,bricks[0],bricksvel[0])
+            
+            if crosspoint!=None and (frametime - crossframetime)>=0:
+                #if self.side =='1P':
+                    # check =False
+                    # if crosspoint[0]>=2.5 and crosspoint[0]<=197.5:
+                    #     if crosspoint[1]>=237.5 and crosspoint[0]<=262.5:
+                    #         check =True
+                    # if check==True:
+                    #print('cross',round(crosspoint[0]),round(crosspoint[1]),crossinv)
+                
+                if crossinv == 'invx':
+                    speed = (-srcspeed[0],srcspeed[1])
+                elif crossinv == 'invy':
+                    speed = (srcspeed[0],-srcspeed[1])
+                elif crossinv == 'invxy':
+                    speed = (-srcspeed[0],-srcspeed[1])
                 balls[-1] = crosspoint
                 ball = crosspoint
+                #障礙物移動到的位置
+               
+                frametime = crossframetime
+                #newx=newTopLeftx
+                newx,newvel=self.move(brickx, brickvel, 170, frametime)
+                # if self.side =='1P':
+                #     if newx!=newTopLeftx:
+                #         print('newx',round(newx),round(newTopLeftx))
+                newbrick = (newx,bricky)
+            else:
+                #nextball = balls[-1]
+                tmpball = [balls[-2][0]+srcspeed[0]*frametime,balls[-2][1]+srcspeed[1]*frametime]
                 
-                #交越點時間
-                if len(bricksvel) > 0:
-                    crosspoint,crossframetime,crossinv = self.GetCrossTime(balls[-2],srcspeed,bricks[0],bricksvel[0])
+                if tmpball[0] !=ball[0] and tmpball[1] !=ball[1]:
+                    balls.append(tmpball) 
+                    ball = tmpball
+                    speed = srcspeed
                 else:
-                    crosspoint,crossframetime,crossinv = self.GetCrossTime(balls[-2],srcspeed,bricks[0],(5,0))
-                #crossframetime =int(abs(balls[-2][0] - crosspoint[0])/abs(srcspeed[0]))
-                
-                if crossframetime ==None:#沒發生碰撞
-                    balls[-1] = points[index][0]
-                    ball = points[index][0]
-                    #障礙物移動到的位置
-                    if len(bricksvel) > 0:
-                        if bricksvel[0][0]>=0:
-                            newx = bricks[0][0][0]+2.5+5*(frametime) 
-                        elif bricksvel[0][0]<0:
-                            newx = bricks[0][0][0]+2.5-5*(frametime) 
-                    else:
-                        newx = bricks[0][0][0]+2.5+5*frametime #預設往右走
-                else:
-                    #判斷反射面反射速度
-                    if crossinv == 'invx':
-                        speed = (-srcspeed[0],srcspeed[1])
-                    elif crossinv == 'invy':
-                        speed = (srcspeed[0],-srcspeed[1])
-                    elif crossinv == 'invxy':
-                        speed = (-srcspeed[0],-srcspeed[1])
-                        
-                    
-                    balls[-1] = crosspoint
-                    ball = crosspoint
-                    #障礙物移動到的位置
-                    if len(bricksvel) > 0:
-                        #newx = bricks[0][0][0]+2.5+bricksvel[0][0]*(crossframetime) 
-                        if bricksvel[0][0]>=0:
-                            newx = bricks[0][0][0]+2.5+5*(crossframetime) 
-                        elif bricksvel[0][0]<0:
-                            newx = bricks[0][0][0]+2.5-5*(crossframetime) 
-                    else:
-                        newx = bricks[0][0][0]+2.5+5*crossframetime #預設往右走
-                
-                
-                
-            #限制障礙物在框內並更新障礙物速度
-            if newx >= (200-30):
-                newx = 2 * (200-30) - newx
-                if len(bricksvel) > 0:
-                    bricksvel[0] = (-5,0)
-            elif newx < 0:
-                newx = 0 - newx
-                if len(bricksvel) > 0:
-                    bricksvel[0] = (5,0)
+                    balls[-1] = tmpball
+                    ball = tmpball
             #更新障礙物
-            newbrick = (newx,bricks[0][0][1]+2.5)
-            bricks[-1] = self.GetBound(pos=newbrick,size=(30,20))
-            prebricks.append(bricks[-1][0])
+            bricks[0] = self.GetBound(pos=newbrick,size=(30,20))
+            bricksvel[0][0] = newvel
+            #判斷更新後球是否被困在障礙物內
+            #state = self.inboundpulse(bricks[-1],ball,speed)
+            if crossframetime !=None:
+                prebricks.append(bricks[0][0])
             
-            return bricks,prebricks,ball,balls,speed
-        return [],[],ball,balls,speed
+            return bricks,bricksvel,prebricks,ball,balls,speed,frametime
+        return [],[],[],ball,balls,speed,frametime
             #-------更新障礙物的位置依據球到碰撞點的時間-----------ending
+    
+    
+    
+    # def updata_cross_bricks(self,bricks,bricksvel,frametime,ball,balls,srcspeed,speed,points,index,prebricks):
+    #     #-------更新障礙物的位置依據球到碰撞點的時間-----------begin
+    #     if len(bricks) > 0:
+    #         newxs = []
+    #         newy = bricks[0][0][1]+2.5
+    #         newxs.append(bricks[0][0][0]+2.5)
+    #         nvel = []
+            
+    #         newballs = []
+    #         newballs.append(balls[-2])
+            
+    #         if len(bricksvel) > 0:
+    #             nvel.append(bricksvel[0][0])
+    #         else:
+    #             nvel.append(5)
+    #         res = 1
+    #         for x in range(0,math.ceil(frametime*res)):
+    #             newballs.append([srcspeed[0]/res+newballs[-1][0],srcspeed[1]/res+newballs[-1][1]])
+                
+    #             if nvel[-1]>0:
+    #                 newxs.append(newxs[-1]+5/res)
+    #             else:
+    #                 newxs.append(newxs[-1]-5/res)
+                    
+    #             if (newxs[-1]) >= (200-30):
+    #                 newxs[-1] = 2 * (200-30) - newxs[-1]
+    #                 nvel.append(-5/res)
+    #             elif newxs[-1] <= 0:
+    #                 newxs[-1] = 0 - newxs[-1]
+    #                 nvel.append(5/res)
+    #             else:
+    #                 nvel.append(nvel[-1])
+                
+    #         crossbounds = []
+    #         crosss =[]
+    #         crosstimes = []
+    #         difftimes =[]
+    #         i = 0
+    #         #find all time cross bricks
+    #         for nbrick in newxs:
+    #             crossbound = self.GetBound(pos=(nbrick,newy),size=(30,20))
+    #             cross = self.GetCross(crossbound,newballs[i],srcspeed,'bricks',i)
+    #             if cross[1] != 99999999:
+    #                 # if self.side =='1P':
+    #                 #     print('cross : ',cross[0])
+    #                 crosstime = abs((balls[-2][0] - cross[0][0])/srcspeed[0])
+    #                 difftime =abs( crosstime - i)
+    #                 crossbounds.append(crossbound)
+    #                 crosss.append(cross)
+    #                 crosstimes.append(crosstime)
+    #                 difftimes.append(difftime)
+    #             i=i+1
+                
+    #         if len(crosss)>0:
+    #             minetime =min(difftimes)
+    #             indexs = []
+    #             i = 0
+    #             for difftime in difftimes:
+    #                 if minetime == difftime:
+    #                     indexs.append(i)
+    #                 i = i + 1
+    #             #更新索引
+    #             index = indexs[0]
+                
+    #             #更新球座標
+    #             balls[-1] = crosss[index][0]
+    #             ball = crosss[index][0]
+                
+    #             #更新球速
+    #             if crosss[index][4] == 'invx':
+    #                 speed = (-srcspeed[0],srcspeed[1])
+    #             elif crosss[index][4] == 'invy':
+    #                 speed = (srcspeed[0],-srcspeed[1])
+    #             elif crosss[index][4] == 'invxy':
+    #                 speed = (-srcspeed[0],-srcspeed[1])
+                
+    #             #更新障礙物
+    #             bricks[-1] =crossbounds[index]
+    #             if len(bricksvel) > 0:
+    #                 bricksvel[-1] = [nvel[-1],0]
+    #             else:
+    #                 bricksvel.append([nvel[-1],0])
+                    
+    #             #判斷更新後球是否被困在障礙物內
+    #             state = self.inboundpulse(bricks[-1],ball,speed)
+                
+    #             if state =='in2out' or state =='in2in' or state =='out2in':
+    #                 cross = self.GetCross(bricks[-1],ball,speed,'bricks',i)
+    #                 if cross[1] != 99999999:
+    #                     #更新球座標
+    #                     if speed[0]>0:
+    #                         tmpx = cross[0][0]+speed[0]*3
+    #                     else:
+    #                         tmpx = cross[0][0]-speed[0]*3
+    #                     if speed[1]>0:
+    #                         tmpy = cross[0][1]+speed[1]*3
+    #                     else:
+    #                         tmpy = cross[0][1]-speed[1]*3
+                        
+    #                     balls[-1] =[tmpx,tmpy]
+    #                     ball = [tmpx,tmpy]
+               
+                    
+                
+    #             prebricks.append(bricks[-1][0])
+    #             return bricks,bricksvel,prebricks,ball,balls,speed
+    #         else:
+    #             bricks[-1] = self.GetBound(pos=(newxs[-1],newy),size=(30,20))
+    #             if len(bricksvel) > 0:
+    #                 bricksvel[-1] = [nvel[-1],0]
+    #             else:
+    #                 bricksvel.append([nvel[-1],0])
+                
+    #             return bricks,bricksvel,prebricks,ball,balls,speed
+    #     return [],[],[],ball,balls,speed
+           # -------更新障礙物的位置依據球到碰撞點的時間-----------ending
+    def inboundpulse(self,bound,ball,speed):
+        nextball = [ball[0]+speed[0],ball[1]+speed[1]]
+        TopLeft = bound[0]
+        BottomRight = bound[3]
+        
+        outsidebefore = False
+        outsideafter = False
+        if TopLeft[0] > ball[0] or BottomRight[0] < ball[0]:
+            if TopLeft[1] > ball[1] or BottomRight[1] < ball[1]:
+                outsidebefore =True
+        
+        if TopLeft[0] > nextball[0] or BottomRight[0] < nextball[0]:
+            if TopLeft[1] > nextball[1] or BottomRight[1] < nextball[1]:
+                outsideafter =True
+        
+        #本來在外面  現在在裡面
+        if outsidebefore==True and outsideafter==False:
+            return 'out2in'
+            
+        #本來在裡面  現在在外面
+        if outsidebefore==False and outsideafter==True:
+            return 'in2out'
+        
+        #本來在裡面  現在在裡面
+        if outsidebefore==False and outsideafter==False:
+            return 'in2in'
+        
+        #本來在外面  現在在外面
+        if outsidebefore==True and outsideafter==True:
+            return 'out2out'
+            
         
     def updata_fail(self,side,balls):
         if balls !=None:
@@ -853,15 +1109,16 @@ class MLPlay:
                 
                 if points[index][0] != None:
                     
-                    frametime =(abs(points[index][0][0] - ball[0])/abs(speed[0]))
+                    frametime =(abs(points[index][0][0] - ball[0])/abs(srcspeed[0]))
                     
                     #balls.append(points[index][0])
-                    ball = points[index][0]
+                    ball =[ball[0]+srcspeed[0]*frametime,ball[1]+srcspeed[1]*frametime]
+                    #ball = points[index][0]
                     balls.append(ball)
                     
                     return ball,balls,speed,frametime,srcspeed,index
                 
-        return ball,balls,speed,0,None,None
+        return ball,balls,speed,0,speed,None
             
     def GetCrossTime(self,Ball,Ballvel,bound,boundvel):
         TopLeft = bound[0]
@@ -877,66 +1134,115 @@ class MLPlay:
         bdy = Ballvel[1]
         
         oy0 = TopLeft[1]
-        odx = boundvel[0]
+        if boundvel[0]>0:
+            odx = 5
+        elif boundvel[0]<0:
+            odx = -5
+        else:
+            if xl <=-2.5:
+                odx = 5
+            elif xl >=167.5:
+                odx = -5
+            else:
+                odx =0
         if odx ==0:
-            odx =0.01
+            odx =5
+            
+        xl = TopLeft[0]+odx
+        xr = BottomRight[0]+odx
         
-        tpmin = (xl - bx0)/(bdx-odx)
-        tpmax = (xr - bx0)/(bdx-odx)
-        tptag = (oy0-by0)/bdy
-        
-        if (tpmin <= tptag) and (tptag <= tpmax):
-            Time.append(tptag)
-            Inv.append('invy')
+        tpmin = ((xl - bx0)/(bdx-odx))
+        tpmax = ((xr - bx0)/(bdx-odx))
+        tptag = ((oy0-by0)/bdy)
+        if tptag>=0 and tpmin>=0 and tpmax>=0:
+            if (tpmin <= tptag) and (tptag <= tpmax):
+                Time.append(tptag)
+                Inv.append('invy')
             
             
         oy0 = BottomRight[1]
         
-        tdmin = (xl - bx0)/(bdx-odx)
-        tdmax = (xr - bx0)/(bdx-odx)
-        tdtag = (oy0-by0)/bdy
-        
-        if (tdmin <= tptag) and (tptag <= tdmax):
-            Time.append(tdtag)
-            Inv.append('invy')
+        tdmin = ((xl - bx0)/(bdx-odx))
+        tdmax = ((xr - bx0)/(bdx-odx))
+        tdtag = ((oy0-by0)/bdy)
+        if tdtag>=0 and tdmin>=0 and tdmax>=0:
+            if (tdmin <= tdtag) and (tdtag <= tdmax):
+                Time.append(tdtag)
+                Inv.append('invy')
         yu = TopLeft[1]
         yd = BottomRight[1]
         k = by0-(bdy/bdx)*bx0
         ob = TopLeft[0]
         ox0 = TopLeft[0]
         
-        tlmin = ((yu-k)*(bdx/bdy)-ob)/odx
-        tlmax = ((yd-k)*(bdx/bdy)-ob)/odx
-        tltag = (ox0-bx0)/bdx
-        
-        if (tlmin <= tltag) and (tltag <= tlmax):
-            Time.append(tltag)
-            Inv.append('invx')
+        tlmin = (((yu-k)*(bdx/bdy)-ob)/odx)
+        tlmax = (((yd-k)*(bdx/bdy)-ob)/odx)
+        tltag = ((ox0-bx0)/(bdx-odx))
+        if tltag>=0 and tlmin>=0 and tlmax>=0:
+            if (tlmin <= tltag) and (tltag <= tlmax):
+                Time.append(tltag)
+                Inv.append('invx')
         ob = BottomRight[0]
         ox0 = BottomRight[0]
         
-        trmin = ((yu-k)*(bdx/bdy)-ob)/odx
-        trmax = ((yd-k)*(bdx/bdy)-ob)/odx
-        trtag = (ox0-bx0)/bdx
-        
-        if (trmin <= trtag) and (trtag <= trmax):
-            Time.append(trtag)
-            Inv.append('invx')
+        trmin = (((yu-k)*(bdx/bdy)-ob)/odx)
+        trmax = (((yd-k)*(bdx/bdy)-ob)/odx)
+        trtag = ((ox0-bx0)/(bdx-odx))
+        if trtag>=0 and trmin>=0 and trmax>=0:
+            if (trmin <= trtag) and (trtag <= trmax):
+                Time.append(trtag)
+                Inv.append('invx')
         inv =None
         if len(Time) > 0:
+            ind1,ind2 = self.argmins(Time)
             Min =min(Time)
-            index = Time.index(Min)
-            inv = Inv[index]
             point =( Ball[0] + Ballvel[0] * Min , Ball[1] + Ballvel[1] * Min)
+            if Time[ind1] ==Time[ind2]:
+                inv = Inv[ind2]
+            else:
+                inv = Inv[ind1]
+            
+            newTopLeftx = TopLeft[0] + 2.5 + odx *( Min)
+            #修正
+            isinrange =False
+            if point[0]>=0 and point[0]<=200:
+                if point[1]>=80 and point[1]<=420:
+                    isinrange =True
+            
+                
+            # if (point[1]< TopLeft[1]):
+            #     fix = abs((point[1] - TopLeft[1])/Ballvel[1])
+            #     point =( Ball[0] + Ballvel[0] *( Min+fix) , Ball[1] + Ballvel[1] *( Min+fix))
+            #     newTopLeftx = TopLeft[0] + 2.5 + odx *( Min+fix)
+            # elif (point[1] > BottomRight[1]):
+            #     fix = abs((point[1] - BottomRight[1])/Ballvel[1])
+            #     point =( Ball[0] + Ballvel[0] *( Min+fix) , Ball[1] + Ballvel[1] *( Min+fix))
+            #     newTopLeftx = TopLeft[0] + 2.5 + odx *( Min+fix)
+            
+            if isinrange!=True:
+                Min =None
+                Inv =None
+                point =None
+                newTopLeftx =None
         else:
             Min =None
             Inv =None
             point =None
+            newTopLeftx =None
         
-        return point,Min,inv
+        return point,Min,inv,newTopLeftx
         
+    def argmins(self,arr):
+        mylist = arr
+        ind1 = np.argmin(mylist)
+        mylist[ind1] = mylist[ind1]+1
+        ind2 = np.argmin(mylist)
+        return ind1,ind2
         
-        
+    def GetBoundPos(self,bound):
+        x = bound[0][0]+2.5
+        y = bound[0][1]+2.5
+        return [x,y]
         
     def GetBound(self,pos=(0,0),size=(5,5),helf_size=(2.5,2.5),top_shift=(0,0)):
         """
