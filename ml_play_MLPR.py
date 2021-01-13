@@ -55,6 +55,7 @@ class MLPlay:
             if speed[1]>0: #往1P
                 x,L2 = self.ball_path(ball, speed, self.model_MLPR_2P, 415)
                 nx = x
+                nx2 = x
                 ix = x
                 sx = x
             elif speed[1]<0:#往2P
@@ -62,10 +63,12 @@ class MLPlay:
                 ball_2p = [x,80]
                 srcspeed =abs(speed[1])
                 nspeed =[round((speed[1])/L2[0]),-speed[1]]
+                n2speed =[round(-(speed[1])/L2[0]),-speed[1]]
                 ispeed =[-nspeed[0],nspeed[1]]
                 sspeed =[nspeed[0]+3,nspeed[1]]
                 
                 nx,nL2 = self.ball_path(ball_2p, nspeed, self.model_MLPR_2P, 415)
+                nx2,nL22 = self.ball_path(ball_2p, n2speed, self.model_MLPR_2P, 415)
                 ix,iL2 = self.ball_path(ball_2p, ispeed, self.model_MLPR_2P, 415)
                 sx,sL2 = self.ball_path(ball_2p, sspeed, self.model_MLPR_2P, 415)
                 
@@ -75,15 +78,18 @@ class MLPlay:
                 ball_2p = [x,415]
                 srcspeed =abs(speed[1])
                 nspeed =[round((speed[1])/L2[0]),-speed[1]]
+                n2speed =[round(-(speed[1])/L2[0]),-speed[1]]
                 ispeed =[-nspeed[0],nspeed[1]]
                 sspeed =[nspeed[0]+3,nspeed[1]]
                 
                 nx,nL2 = self.ball_path(ball_2p, nspeed, self.model_MLPR_1P, 80)
+                nx2,nL22 = self.ball_path(ball_2p, n2speed, self.model_MLPR_1P, 80)
                 ix,iL2 = self.ball_path(ball_2p, ispeed, self.model_MLPR_1P, 80)
                 sx,sL2 = self.ball_path(ball_2p, sspeed, self.model_MLPR_1P, 80)
             elif speed[1]<0:#往2P
                 x,L2 = self.ball_path(ball, speed, self.model_MLPR_1P, 80)
                 nx = x
+                nx2 = x
                 ix = x
                 sx = x
                 
@@ -131,7 +137,7 @@ class MLPlay:
             #     self.pre.append(ball[0])
             #     print(self.pre,ball[1])
             #     self.pre =[] 
-        data = [self.adj(nx,196),self.adj(ix,196),self.adj(sx,196)]
+        data = [self.adj(nx,196),self.adj(nx2,196),self.adj(ix,196),self.adj(sx,196)]
         
         mins = min(data)
         maxs = max(data)
