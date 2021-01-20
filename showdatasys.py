@@ -41,12 +41,20 @@ def on_message(client, userdata, msg):
     ball =np.array( m_in['ball'])
     
     pbricks =np.array( m_in['prebrickslog'])
+    capbricks =np.array( m_in['caprebrickslog'])
+    cipbricks =np.array( m_in['ciprebrickslog'])
+    
+    #pbrick =np.array( m_in['preendbrick'])
+    # capbrick =np.array( m_in['preendcabrick'])
+    # cipbrick =np.array( m_in['preendcibrick'])
+    
     #print(msg.topic+" "+str( preballlogs[:,0]))
     # lines = ax.plot(0, 0)[0] 
     # lines2 = ax2.plot(0, 0)[0] 
+    
     if m_in['side'] == '1P':
         
-        print('1P',str(m_in['first']))
+        print('1P',str(m_in['first']),str(m_in['diedspeed']))
         #預測球路徑  不切球
         lines.set_color("red")
         lines.set_xdata(preballlogs[:,0])
@@ -74,9 +82,15 @@ def on_message(client, userdata, msg):
         ci_psct.set_xdata(pci_ball[0])
         ci_psct.set_ydata(pci_ball[1])
         
+        #球現在的位置
+        sct.set_xdata(ball[0])
+        sct.set_ydata(ball[1])
+             
+        #rects[0].set_xy(pbrick)
+        
     elif m_in['side'] == '2P':
         
-        print('2P',str(m_in['first']))
+        print('2P',str(m_in['first']),str(m_in['diedspeed']))
         #預測球路徑  不切球
         lines2.set_color("blue")
         lines2.set_xdata(preballlogs[:,0])
@@ -103,18 +117,24 @@ def on_message(client, userdata, msg):
         #預測球的落點  切反球
         ci_psct2.set_xdata(pci_ball[0])
         ci_psct2.set_ydata(pci_ball[1])
+        
+        #球現在的位置
+        sct2.set_xdata(ball[0])
+        sct2.set_ydata(ball[1])
+        
+        #rect2s[0].set_xy(pbrick)
     
-    #print(str(pbricks))
-    
-    
-    #球現在的位置
-    sct.set_xdata(ball[0])
-    sct.set_ydata(ball[1])
-    
-    sct2.set_xdata(ball[0])
-    sct2.set_ydata(ball[1])
+    #print(str(pbricks[0][0]),' , ',str(pbricks[0][1]))
     
     
+    
+    
+    
+    
+    # rects[1].set_xy(capbrick)
+    # rect2s[1].set_xy(capbrick)
+    # rects[2].set_xy(cipbrick)
+    # rect2s[2].set_xy(cipbrick)
     for i in range(len(rects)):
         if i< len(pbricks):
             rects[i].set_xy(pbricks[i])
@@ -122,6 +142,18 @@ def on_message(client, userdata, msg):
         else:
             rects[i].set_xy((-100,-100))
             rect2s[i].set_xy((-100,-100))
+    #     if i< len(capbricks):
+    #         rects[i].set_xy(capbricks[i])
+    #         rect2s[i].set_xy(capbricks[i])
+    #     else:
+    #         rects[i].set_xy((-100,-100))
+    #         rect2s[i].set_xy((-100,-100))
+    #     if i< len(cipbricks):
+    #         rects[i].set_xy(cipbricks[i])
+    #         rect2s[i].set_xy(cipbricks[i])
+    #     else:
+    #         rects[i].set_xy((-100,-100))
+    #         rect2s[i].set_xy((-100,-100))
             
     
     fig.canvas.draw()
@@ -150,11 +182,17 @@ ci_lines2 = ax2.plot(x, y,linewidth=0.5,linestyle="--")[0]
 
 rects =[]
 rect2s =[]
+carects =[]
+carect2s =[]
+cirects =[]
+cirect2s =[]
 for i in range(10):
     color = (0.8+i*0.02,0.8-i*0.08,0.)
+    cacolor = (0.,1.0-i*0.1,0.)
+    cicolor = (1.0-i*0.1,1.0-i*0.1,1.0-i*0.1)
     rects.append(ax.add_patch(
      patches.Rectangle(
-        (1, 1),
+        (0, 0),
         35,
         25,
         edgecolor = color,
@@ -163,10 +201,46 @@ for i in range(10):
      ) ))
     rect2s.append(ax2.add_patch(
      patches.Rectangle(
-        (1, 1),
+        (0, 0),
         35,
         25,
         edgecolor = color,
+        facecolor = 'w',
+        fill=False      
+     ) ))
+    carects.append(ax2.add_patch(
+     patches.Rectangle(
+        (0, 0),
+        35,
+        25,
+        edgecolor = cacolor,
+        facecolor = 'w',
+        fill=False      
+     ) ))
+    carect2s.append(ax2.add_patch(
+     patches.Rectangle(
+        (0, 0),
+        35,
+        25,
+        edgecolor = cacolor,
+        facecolor = 'w',
+        fill=False      
+     ) ))
+    cirect2s.append(ax2.add_patch(
+     patches.Rectangle(
+        (0, 0),
+        35,
+        25,
+        edgecolor = cicolor,
+        facecolor = 'w',
+        fill=False      
+     ) ))
+    cirect2s.append(ax2.add_patch(
+     patches.Rectangle(
+        (0, 0),
+        35,
+        25,
+        edgecolor = cicolor,
         facecolor = 'w',
         fill=False      
      ) ))
@@ -183,7 +257,9 @@ ca_psct2 = ax2.plot(0, 0,'o',markersize=8,color=(0.,1.,0.),markerfacecolor='none
 
 ci_psct = ax.plot(0, 0,'o',markersize=6,color=(1.,1.,1.),markerfacecolor='none')[0] 
 ci_psct2 = ax2.plot(0, 0,'o',markersize=6,color=(1.,1.,1.),markerfacecolor='none')[0] 
-
+for i in range(len(rects)):
+    rects[i].set_xy((-100,-100))
+    rect2s[i].set_xy((-100,-100))
 #plt.xlabel('X Label')
 #plt.ylabel('Y Label')
 

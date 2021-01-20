@@ -84,8 +84,8 @@ class MLPlay:
         """
         self.ball_served = False
         self.side = side
-        self.ballpos =[]
-        self.ballvel =[]
+        # self.ballpos =[]
+        # self.ballvel =[]
         self.blocker =[]
         self.blockervel =[]
         self.data =[]
@@ -150,11 +150,12 @@ class MLPlay:
         ca_forms.append( self.GetBound(pos=(2.5,2.5),size=(195,395+20),top_shift=(0,50+30)))
         ci_forms= []
         ci_forms.append( self.GetBound(pos=(2.5,2.5),size=(195,395+20),top_shift=(0,50+30)))
-        if len(self.ballvel)>=1: 
-            speed = scene_info["ball_speed"]
-            ca_speed = scene_info["ball_speed"]
-            ci_speed = scene_info["ball_speed"]
-        else:
+      
+        speed = scene_info["ball_speed"]
+        ca_speed = scene_info["ball_speed"]
+        ci_speed = scene_info["ball_speed"]
+        
+        if speed[0]==0:
             if self.side =='1P':
                 speed =(-7,-7) #初始假設的球速
                 ca_speed =(-7,-7) #初始假設的球速
@@ -163,6 +164,8 @@ class MLPlay:
                 speed =(7,7) #初始假設的球速
                 ca_speed =(7,7) #初始假設的球速
                 ci_speed =(7,7) #初始假設的球速
+            
+            
         
         if (abs(speed[0]) != abs(speed[1])) and self.lvl =='EASY':
             self.lvl =='NORMAL'
@@ -251,7 +254,7 @@ class MLPlay:
         mix = (maxpos + minpos)/2
         Error = mix - real[0]         #追隨誤差  值越大要右移，越小要左移 
         
-        margin = 10
+        margin = 12
         gip=4
         # if self.side =='1P':
         #     L0 = 420
@@ -460,20 +463,20 @@ class MLPlay:
                         
                 
         
-        #記錄球速
-        if len(self.ballpos)>=1: 
-            self.ballvel.append(scene_info["ball_speed"])
+        # #記錄球速
+        # if len(self.ballpos)>=1: 
+        #     self.ballvel.append(scene_info["ball_speed"])
             
-        #紀錄球的位置
-        self.ballpos.append(scene_info["ball"])
+        # #紀錄球的位置
+        # self.ballpos.append(scene_info["ball"])
         
         
-        #紀錄太多就刪除
-        if len(self.ballpos)>=10:
-            del self.ballpos[0]
+        # #紀錄太多就刪除
+        # if len(self.ballpos)>=10:
+        #     del self.ballpos[0]
             
-        if len(self.ballvel)>=10:
-            del self.ballvel[0]
+        # if len(self.ballvel)>=10:
+        #     del self.ballvel[0]
             
             
         
@@ -683,8 +686,8 @@ class MLPlay:
         Reset the status
         """
         self.ball_served = False
-        self.ballpos =[]
-        self.ballvel =[]
+        # self.ballpos =[]
+        # self.ballvel =[]
         self.blocker =[]
         self.blockervel =[]
         self.data =[]
@@ -1065,10 +1068,12 @@ class MLPlay:
              #找出最近的碰撞點 
             lens = []
             for point in points:    
-                if point[1] != 99999999:
-                    lens.append(point[1])
-            
+                lens.append(point[1])
+            tempmin = 0
             if len(lens) >0:
+                tempmin = min(lens)
+            
+            if len(lens) >0 and tempmin!=99999999:
                 srcspeed = speed
                 Min = min(lens)
                 index = lens.index(Min)
@@ -1258,7 +1263,7 @@ class MLPlay:
         BottomRight = ( pos[0] + size[0] + helf_size[0], pos[1] + size[1] + helf_size[1] )
         bound = [ TopLeft, TopRight, BottomLeft, BottomRight ]
         return bound
-    
+    x =((0,1),[1,2,3],2)
     def GetCenter(self,pos=(0,0),size=(5,5)):
         """
         得到物體的中心點座標

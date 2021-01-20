@@ -127,8 +127,6 @@ class MLPlay:
                 lens =len(self.data)
                 for i in range(lens):
                     writer.writerow(self.data[i])
-    
-            
             self.reset()
             return "RESET"
         

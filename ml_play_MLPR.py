@@ -28,7 +28,10 @@ class MLPlay:
         filename = "D:\\MLGame-master\\MLGame-master\\games\\pingpong\\ml\\MLPR_2P.sav"
         self.model_MLPR_2P = pickle.load(open(filename,'rb'))
         
+        
+        
         self.posx = -1
+        self.lvl ='EASY'
 
     def update(self, scene_info):
         """
@@ -41,10 +44,20 @@ class MLPlay:
             
         if scene_info["status"] != "GAME_ALIVE":
             print(scene_info["ball_speed"])
+            self.reset()
             return "RESET"
         
         ball = scene_info["ball"]
         speed = scene_info["ball_speed"]
+        
+        if "blocker" in scene_info.keys():
+            if self.lvl =='EASY':
+                self.lvl ='HARD'
+        
+        if (abs(speed[0]) != abs(speed[1])) and self.lvl =='EASY':
+            self.lvl =='NORMAL'
+        
+        
         if speed[0]==0:
             if self.side=='1P':
                 speed =[-7,-7]
@@ -53,46 +66,58 @@ class MLPlay:
             
         if self.side=='1P':
             if speed[1]>0: #往1P
-                x,L2 = self.ball_path(ball, speed, self.model_MLPR_2P, 415)
+                x,L2,x2,Ln2 = self.ball_paths(ball, speed, self.model_MLPR_2P,415, 80)
                 nx = x
-                nx2 = x
                 ix = x
                 sx = x
+               
             elif speed[1]<0:#往2P
-                x,L2 = self.ball_path(ball, speed, self.model_MLPR_1P, 80)
+                
+                x,L2,x2,Ln2 = self.ball_paths(ball, speed, self.model_MLPR_1P,80, 415)
                 ball_2p = [x,80]
                 srcspeed =abs(speed[1])
-                nspeed =[round((speed[1])/L2[0]),-speed[1]]
-                n2speed =[round(-(speed[1])/L2[0]),-speed[1]]
+                
+                if L2[0]>0:
+                    nspeed=speed
+                else:
+                    nspeed =[round(-(srcspeed)),-speed[1]]
+                    
                 ispeed =[-nspeed[0],nspeed[1]]
                 sspeed =[nspeed[0]+3,nspeed[1]]
                 
-                nx,nL2 = self.ball_path(ball_2p, nspeed, self.model_MLPR_2P, 415)
-                nx2,nL22 = self.ball_path(ball_2p, n2speed, self.model_MLPR_2P, 415)
-                ix,iL2 = self.ball_path(ball_2p, ispeed, self.model_MLPR_2P, 415)
-                sx,sL2 = self.ball_path(ball_2p, sspeed, self.model_MLPR_2P, 415)
+                nx,nL2,nx2,nLn2 = self.ball_paths(ball_2p, nspeed, self.model_MLPR_2P, 415,80)
+                ix,iL2,ix2,iLn2 = self.ball_paths(ball_2p, ispeed, self.model_MLPR_2P, 415,80)
+                sx,sL2,sx2,sLn2 = self.ball_paths(ball_2p, sspeed, self.model_MLPR_2P, 415,80)
+                
+                nx=x2
                 
         elif self.side=='2P':
             if speed[1]>0: #往1P
-                x,L2 = self.ball_path(ball, speed, self.model_MLPR_2P, 415)
+                
+                x,L2,x2,Ln2 = self.ball_paths(ball, speed, self.model_MLPR_2P,415, 80)
                 ball_2p = [x,415]
                 srcspeed =abs(speed[1])
-                nspeed =[round((speed[1])/L2[0]),-speed[1]]
-                n2speed =[round(-(speed[1])/L2[0]),-speed[1]]
+                
+                if L2[0]>0:
+                    nspeed =[round(-(srcspeed)),-speed[1]]
+                else:
+                    nspeed=speed
+                    
                 ispeed =[-nspeed[0],nspeed[1]]
                 sspeed =[nspeed[0]+3,nspeed[1]]
                 
-                nx,nL2 = self.ball_path(ball_2p, nspeed, self.model_MLPR_1P, 80)
-                nx2,nL22 = self.ball_path(ball_2p, n2speed, self.model_MLPR_1P, 80)
-                ix,iL2 = self.ball_path(ball_2p, ispeed, self.model_MLPR_1P, 80)
-                sx,sL2 = self.ball_path(ball_2p, sspeed, self.model_MLPR_1P, 80)
+                nx,nL2,nx2,nLn2 = self.ball_paths(ball_2p, nspeed, self.model_MLPR_1P, 80,415)
+                ix,iL2,ix2,iLn2 = self.ball_paths(ball_2p, ispeed, self.model_MLPR_1P, 80,415)
+                sx,sL2,sx2,sLn2 = self.ball_paths(ball_2p, sspeed, self.model_MLPR_1P, 80,415)
+                
+                nx=x2
+                
+                
             elif speed[1]<0:#往2P
-                x,L2 = self.ball_path(ball, speed, self.model_MLPR_1P, 80)
+                x,L2,x2,Ln2 = self.ball_paths(ball, speed, self.model_MLPR_1P,80, 415)
                 nx = x
-                nx2 = x
                 ix = x
                 sx = x
-                
                 
                 
                 
@@ -137,19 +162,26 @@ class MLPlay:
             #     self.pre.append(ball[0])
             #     print(self.pre,ball[1])
             #     self.pre =[] 
-        data = [self.adj(nx,196),self.adj(nx2,196),self.adj(ix,196),self.adj(sx,196)]
+            
+        # if self.lvl =='EASY':
+        #     data = [self.adj(nx,196),self.adj(ix,196),self.adj(sx,196)]
+        # elif self.lvl =='NORMAL':
+        #     data = [self.adj(nx,196),self.adj(nx2,196),self.adj(ix,196),self.adj(sx,196)]
+        # elif self.lvl =='HARD':
+        #     data = [self.adj(nx,196),self.adj(nx2,196),self.adj(ix,196),self.adj(sx,196)]
         
+        data = [self.adj(nx,196),self.adj(ix,196),self.adj(sx,196)]
         mins = min(data)
         maxs = max(data)
         
-        cx =(mins+maxs)/2 + 2.5
-        
+        #cx =(mins+maxs)/2 + 2.5
+        cx = self.adj(nx,196)+2.5
         #if self.posx == -1 or (ball[1] <=85 and ball[1] >=410):
         self.posx = cx
         
         error = self.posx - px
         
-        #print('cx',round(cx),'nx',round(data[0]),'ix',round(data[1]),'sx',round(data[2]),'px',round(px),'ballx',round(ball[0] ))
+        print('cx',round(cx),'nx',round(data[0]),'ix',round(data[1]),'sx',round(data[2]),'px',round(px),'ballx',round(ball[0] ))
         
         if scene_info["ball_speed"][0]!=0 and not self.ball_served:
             self.ball_served = True
@@ -217,15 +249,24 @@ class MLPlay:
 #                 else:
 #                     command = "NONE"
 #                 return command
-
     #mlpr
-    def ball_path(self,pos,vel,model,y):
+    def ball_paths(self,pos,vel,model,y,y2):
         L1 =self.get_line_func(pos, vel)
         L1 =(L1[0],L1[1]/415)
-        L2 = model.predict([L1])[0]
-        L2 =(L2[0],L2[1]*415)
+        Ln = model.predict([L1])[0]
+        L2 =(Ln[0],Ln[1]*415)
+        Ln2 =(Ln[2],Ln[3]*415)
         x = self.solve_x(L2, y)
-        return x,L2
+        x2 = self.solve_x(Ln2, y2)
+        return x,L2,x2,Ln2
+    # #mlpr
+    # def ball_path(self,pos,vel,model,y):
+    #     L1 =self.get_line_func(pos, vel)
+    #     L1 =(L1[0],L1[1]/415)
+    #     L2 = model.predict([L1])[0]
+    #     L2 =(L2[0],L2[1]*415)
+    #     x = self.solve_x(L2, y)
+    #     return x,L2
     #rulebase
     # def ball_path_sim(self,pos,vel,model,y):
     #     L1 =self.get_line_func(pos, vel)
